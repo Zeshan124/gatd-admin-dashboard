@@ -1,0 +1,331 @@
+{
+  "info": {
+    "name": "GATD Backend API",
+    "description": "GATD registrations + Solutions/Programs content API.\n\nHow to use:\n1. Set the `baseUrl` collection variable (default http://localhost:5000).\n2. Run **Auth > Login** (or Signup) once — its test script saves the JWT into the `token` variable, so all Admin requests are authenticated automatically.\n3. Public requests need no auth. Admin requests use Bearer {{token}}.\n\nBodies are examples — edit freely. List endpoints have optional query params (disabled by default).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "signupKey", "value": "change-this-signup-key" },
+    { "key": "adminEmail", "value": "you@gatd.com" },
+    { "key": "adminPassword", "value": "YourStrongPass123" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+      }
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup (create admin)",
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "const r = pm.response.json();",
+              "if (r && r.data && r.data.token) { pm.collectionVariables.set('token', r.data.token); }"
+            ] } }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-signup-key", "value": "{{signupKey}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Your Name\",\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/auth/signup", "host": ["{{baseUrl}}"], "path": ["apis", "auth", "signup"] }
+          }
+        },
+        {
+          "name": "Login (get token)",
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "const r = pm.response.json();",
+              "if (r && r.data && r.data.token) { pm.collectionVariables.set('token', r.data.token); pm.test('token saved', () => pm.expect(r.data.token).to.be.a('string')); }"
+            ] } }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/auth/login", "host": ["{{baseUrl}}"], "path": ["apis", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/auth/me", "host": ["{{baseUrl}}"], "path": ["apis", "auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public — Solutions & Programs (no auth)",
+      "item": [
+        {
+          "name": "Catalog (all solutions)",
+          "request": { "auth": { "type": "noauth" }, "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/public/solutions", "host": ["{{baseUrl}}"], "path": ["apis", "public", "solutions"] } }
+        },
+        {
+          "name": "Parent + children",
+          "request": { "auth": { "type": "noauth" }, "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/public/solutions/:parentSlug", "host": ["{{baseUrl}}"], "path": ["apis", "public", "solutions", ":parentSlug"],
+              "variable": [ { "key": "parentSlug", "value": "certified-programs" } ] } }
+        },
+        {
+          "name": "Child solution + programmes",
+          "request": { "auth": { "type": "noauth" }, "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/public/child-solutions/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "public", "child-solutions", ":slug"],
+              "variable": [ { "key": "slug", "value": "strategic-hr" } ] } }
+        },
+        {
+          "name": "All published programs",
+          "request": { "auth": { "type": "noauth" }, "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/public/programs", "host": ["{{baseUrl}}"], "path": ["apis", "public", "programs"] } }
+        },
+        {
+          "name": "Program detail",
+          "request": { "auth": { "type": "noauth" }, "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/public/programs/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "public", "programs", ":slug"],
+              "variable": [ { "key": "slug", "value": "strategic-hr-business-partnership" } ] } }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Parent Solutions",
+      "item": [
+        {
+          "name": "List",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/admin/parent-solutions", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "parent-solutions"],
+              "query": [
+                { "key": "q", "value": "", "disabled": true },
+                { "key": "isActive", "value": "true", "disabled": true },
+                { "key": "sort", "value": "sort_order", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true },
+                { "key": "pageSize", "value": "25", "disabled": true }
+              ] } }
+        },
+        {
+          "name": "Create",
+          "request": { "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Certified Programs\",\n  \"slug\": \"certified-programs\",\n  \"description\": \"Executive-level certifications\",\n  \"isActive\": true,\n  \"sortOrder\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/parent-solutions", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "parent-solutions"] } }
+        },
+        {
+          "name": "Get by slug",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/admin/parent-solutions/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "parent-solutions", ":slug"],
+              "variable": [ { "key": "slug", "value": "certified-programs" } ] } }
+        },
+        {
+          "name": "Update (partial)",
+          "request": { "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Certified Programmes\",\n  \"sortOrder\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/parent-solutions/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "parent-solutions", ":slug"],
+              "variable": [ { "key": "slug", "value": "certified-programs" } ] } }
+        },
+        {
+          "name": "Delete (soft, optional cascade)",
+          "request": { "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/apis/admin/parent-solutions/:slug?cascade=true", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "parent-solutions", ":slug"],
+              "query": [ { "key": "cascade", "value": "true" } ],
+              "variable": [ { "key": "slug", "value": "certified-programs" } ] } }
+        },
+        {
+          "name": "Children of parent",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/admin/parent-solutions/:slug/children", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "parent-solutions", ":slug", "children"],
+              "variable": [ { "key": "slug", "value": "certified-programs" } ] } }
+        },
+        {
+          "name": "Reorder",
+          "request": { "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"order\": [\"certified-programs\", \"executive-educational-program\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/parent-solutions/reorder", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "parent-solutions", "reorder"] } }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Child Solutions",
+      "item": [
+        {
+          "name": "List",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/admin/child-solutions", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "child-solutions"],
+              "query": [
+                { "key": "parent", "value": "certified-programs", "disabled": true },
+                { "key": "q", "value": "", "disabled": true },
+                { "key": "isActive", "value": "true", "disabled": true },
+                { "key": "sort", "value": "sort_order", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true },
+                { "key": "pageSize", "value": "25", "disabled": true }
+              ] } }
+        },
+        {
+          "name": "Create",
+          "request": { "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"parentSlug\": \"certified-programs\",\n  \"slug\": \"strategic-hr\",\n  \"eyebrow\": \"Certified Programs\",\n  \"title\": \"Strategic Human Resources\",\n  \"description\": \"Eight executive-level certifications\",\n  \"subheading\": \"Advance Your Expertise in Strategic HR\",\n  \"subtext\": \"The Strategic Human Resources program helps professionals\",\n  \"banner\": \"/images/solutions/strategic-hr/banner.jpg\",\n  \"cardImage\": \"/images/solutions/Certified-Programs/certified-1.jpg\",\n  \"programmesHeading\": \"Strategic HR Programme Suite\",\n  \"mapImage\": \"/images/solutions/strategic-hr/map.jpg\",\n  \"gainsHeading\": \"What You'll Gain\",\n  \"gains\": [ { \"iconSrc\": \"/images/solutions/strategic-hr/1.svg\", \"text\": \"Develop deep expertise\" } ],\n  \"whyHeading\": \"Why this Suite is Worth the Investment\",\n  \"whyBadge\": \"Invest in results that last\",\n  \"whyImage\": \"/images/solutions/strategic-hr/plan.jpg\",\n  \"audienceBadge\": \"Who is This\",\n  \"audienceHeading\": \"Programme Suite Designed For?\",\n  \"audienceImage\": \"/images/solutions/strategic-hr/programme-suits.jpg\",\n  \"audience\": [\"Senior HR Leaders & Directors\", \"Aspiring C-Suite & High-Potentials\"],\n  \"brochure\": \"/brochures/strategic-human-resources-and-management.pdf\",\n  \"rating\": 4.9,\n  \"reviews\": 428,\n  \"isActive\": true,\n  \"sortOrder\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/child-solutions", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "child-solutions"] } }
+        },
+        {
+          "name": "Get by slug (incl. programmes)",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/admin/child-solutions/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "child-solutions", ":slug"],
+              "variable": [ { "key": "slug", "value": "strategic-hr" } ] } }
+        },
+        {
+          "name": "Update (partial)",
+          "request": { "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 5.0,\n  \"audience\": [\"Senior HR Leaders\", \"HR Business Partners\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/child-solutions/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "child-solutions", ":slug"],
+              "variable": [ { "key": "slug", "value": "strategic-hr" } ] } }
+        },
+        {
+          "name": "Delete (soft, optional cascade)",
+          "request": { "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/apis/admin/child-solutions/:slug?cascade=true", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "child-solutions", ":slug"],
+              "query": [ { "key": "cascade", "value": "true" } ],
+              "variable": [ { "key": "slug", "value": "strategic-hr" } ] } }
+        },
+        {
+          "name": "Programs of child",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/admin/child-solutions/:slug/programs", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "child-solutions", ":slug", "programs"],
+              "variable": [ { "key": "slug", "value": "strategic-hr" } ] } }
+        },
+        {
+          "name": "Reorder",
+          "request": { "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"order\": [\"strategic-hr\", \"women-in-leadership\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/child-solutions/reorder", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "child-solutions", "reorder"] } }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Programs",
+      "item": [
+        {
+          "name": "List",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/admin/programs", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "programs"],
+              "query": [
+                { "key": "childSolution", "value": "strategic-hr", "disabled": true },
+                { "key": "q", "value": "", "disabled": true },
+                { "key": "isActive", "value": "true", "disabled": true },
+                { "key": "isPublished", "value": "true", "disabled": true },
+                { "key": "sort", "value": "-created_at", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true },
+                { "key": "pageSize", "value": "25", "disabled": true }
+              ] } }
+        },
+        {
+          "name": "Create",
+          "request": { "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"childSolutionSlug\": \"strategic-hr\",\n  \"slug\": \"strategic-hr-business-partnership\",\n  \"eyebrow\": \"Certified Programs\",\n  \"title\": \"SHRBP Certification\",\n  \"description\": \"A 3-day executive SHRBP certification programme\",\n  \"banner\": \"/images/solutions/Programs/strategic-hr-banner.jpg\",\n  \"cardImage\": \"/images/solutions/strategic-hr/prog-1.jpg\",\n  \"subheading\": \"\",\n  \"subtext\": \"\",\n  \"rating\": 4.9,\n  \"reviews\": 486,\n  \"priceCents\": 385000,\n  \"currency\": \"SGD\",\n  \"pricingPeriod\": \"/Person\",\n  \"pricingHeading\": \"Why It's Worth\",\n  \"pricingDescription\": \"Earn a respected EIU-Paris credential\",\n  \"brochure\": \"/brochures/strategic-hr-business-partnership.pdf\",\n  \"registrationHeading\": \"Strategic HR Business Partnership & Beyond (SHRBP)\",\n  \"overview\": { \"title\": \"SHRBP Certification\", \"description\": \"A strategic initiative\", \"image\": \"/images/solutions/strategic-hr/SHRBP-overview.png\" },\n  \"gainsHeading\": \"What You'll Gain\",\n  \"gains\": [ { \"iconSrc\": \"/images/solutions/strategic-hr/6.svg\", \"text\": \"Position HR as a strategic business partner\" } ],\n  \"focusHeading\": \"Focuses on Developing\",\n  \"focusAreas\": [ { \"iconSrc\": \"/images/solutions/strategic-hr/1.svg\", \"title\": \"Strategic HR Alignment\", \"description\": \"Strategic thinking aligned with business priorities\" } ],\n  \"faqs\": [ { \"question\": \"Who is this programme for?\", \"answer\": \"Senior HR Managers and above\" } ],\n  \"facilitator\": { \"name\": \"Prof. Dr. Joel Farnworth\", \"role\": \"Dean, EIU-Paris\", \"image\": \"/images/solutions/strategic-hr/Dr_Joel.png\", \"bg\": \"/images/solutions/strategic-hr/program_facilitator_BG.png\", \"expertise\": [\"Human Resource Management\", \"Leadership Development\"], \"biography\": [\"Coach and Consultant\", \"Strategic HR Management\"] },\n  \"certification\": { \"badge\": \"Recognised Speaker Credentials\", \"heading\": \"Certification\\non Successful\\nCompletion\", \"image\": \"/images/solutions/strategic-hr/certificate_image.jpg\", \"paragraphs\": [\"When you complete the program...\", \"This certification recognizes...\"] },\n  \"layoutType\": \"strategic_pillars\",\n  \"layoutData\": { \"heading\": \"3 Strategic Pillars\", \"badge\": \"3 Days\", \"days\": [ { \"label\": \"DAY 1\", \"id\": \"day1\" } ], \"modulesByDay\": { \"day1\": [ { \"arrowTitle\": \"...\", \"labelPosition\": \"bottom\", \"sideLabel\": \"...\", \"sideDescription\": \"...\" } ] } },\n  \"isPublished\": true,\n  \"isActive\": true,\n  \"sortOrder\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/programs", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "programs"] } }
+        },
+        {
+          "name": "Get by slug",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/admin/programs/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "programs", ":slug"],
+              "variable": [ { "key": "slug", "value": "strategic-hr-business-partnership" } ] } }
+        },
+        {
+          "name": "Update (partial)",
+          "request": { "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"priceCents\": 399000,\n  \"isPublished\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/programs/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "programs", ":slug"],
+              "variable": [ { "key": "slug", "value": "strategic-hr-business-partnership" } ] } }
+        },
+        {
+          "name": "Delete (soft)",
+          "request": { "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/apis/admin/programs/:slug", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "programs", ":slug"],
+              "variable": [ { "key": "slug", "value": "strategic-hr-business-partnership" } ] } }
+        },
+        {
+          "name": "Reorder",
+          "request": { "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"order\": [\"strategic-hr-business-partnership\", \"business-people-leadership\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/admin/programs/reorder", "host": ["{{baseUrl}}"], "path": ["apis", "admin", "programs", "reorder"] } }
+        }
+      ]
+    },
+    {
+      "name": "Registrations (form module)",
+      "item": [
+        {
+          "name": "Programs pricing catalog (public)",
+          "request": { "auth": { "type": "noauth" }, "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/programs", "host": ["{{baseUrl}}"], "path": ["apis", "programs"] } }
+        },
+        {
+          "name": "Create registration (public)",
+          "request": { "auth": { "type": "noauth" }, "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Aisha\",\n  \"email\": \"aisha@example.com\",\n  \"phoneCountry\": \"AE\",\n  \"phoneNumber\": \"501234567\",\n  \"country\": \"United Arab Emirates\",\n  \"designation\": \"HR Director\",\n  \"organization\": \"Acme Group\",\n  \"hearAboutUs\": \"LinkedIn\",\n  \"programSlugs\": [\"strategic-hr-business-partnership\", \"performance-rewards\"],\n  \"sourcePage\": \"/solutions/strategic-hr\",\n  \"utm\": { \"source\": \"google\", \"medium\": \"cpc\", \"campaign\": \"hr-q3\" },\n  \"honeypot\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/apis/registrations", "host": ["{{baseUrl}}"], "path": ["apis", "registrations"] } }
+        },
+        {
+          "name": "List registrations (admin)",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/registrations", "host": ["{{baseUrl}}"], "path": ["apis", "registrations"],
+              "query": [
+                { "key": "q", "value": "", "disabled": true },
+                { "key": "status", "value": "new", "disabled": true },
+                { "key": "dateFrom", "value": "2026-08-01", "disabled": true },
+                { "key": "dateTo", "value": "2026-08-31", "disabled": true },
+                { "key": "includeSpam", "value": "false", "disabled": true },
+                { "key": "sort", "value": "-created_at", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true },
+                { "key": "pageSize", "value": "25", "disabled": true }
+              ] } }
+        },
+        {
+          "name": "Registration detail (admin)",
+          "request": { "method": "GET",
+            "url": { "raw": "{{baseUrl}}/apis/registrations/:id", "host": ["{{baseUrl}}"], "path": ["apis", "registrations", ":id"],
+              "variable": [ { "key": "id", "value": "1" } ] } }
+        },
+        {
+          "name": "Export registrations (xlsx / csv, admin)",
+          "request": { "method": "GET",
+            "description": "Downloads .xlsx by default; enable the `format=csv` query param for CSV. Honors the same filters as the list. In Postman, use 'Send and Download' to save the file.",
+            "url": { "raw": "{{baseUrl}}/apis/registrations/export", "host": ["{{baseUrl}}"], "path": ["apis", "registrations", "export"],
+              "query": [
+                { "key": "format", "value": "csv", "disabled": true },
+                { "key": "q", "value": "", "disabled": true },
+                { "key": "status", "value": "new", "disabled": true },
+                { "key": "dateFrom", "value": "2026-08-01", "disabled": true },
+                { "key": "dateTo", "value": "2026-08-31", "disabled": true },
+                { "key": "includeSpam", "value": "false", "disabled": true },
+                { "key": "sort", "value": "-created_at", "disabled": true }
+              ] } }
+        }
+      ]
+    }
+  ]
+}

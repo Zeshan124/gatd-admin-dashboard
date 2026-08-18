@@ -1,0 +1,44 @@
+# Apache shared hosting cache headers
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # Images — 1 year
+  ExpiresByType image/jpeg         "access plus 1 year"
+  ExpiresByType image/png          "access plus 1 year"
+  ExpiresByType image/webp         "access plus 1 year"
+  ExpiresByType image/gif          "access plus 1 year"
+  ExpiresByType image/svg+xml      "access plus 1 year"
+  ExpiresByType image/x-icon       "access plus 1 day"
+
+  # Fonts — 1 year
+  ExpiresByType font/woff          "access plus 1 year"
+  ExpiresByType font/woff2         "access plus 1 year"
+  ExpiresByType application/font-woff  "access plus 1 year"
+  ExpiresByType font/otf           "access plus 1 year"
+
+  # CSS & JS — 1 year (Next.js hashes filenames)
+  ExpiresByType text/css           "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript    "access plus 1 year"
+
+  # HTML — always revalidate
+  ExpiresByType text/html          "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Immutable flag for hashed assets
+  <FilesMatch "\.(js|css|woff|woff2|otf|jpg|jpeg|png|webp|gif|svg)$">
+    Header append Cache-Control "public, immutable"
+  </FilesMatch>
+
+  # Security headers
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Enable Gzip compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript application/json image/svg+xml
+</IfModule>

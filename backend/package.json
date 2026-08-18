@@ -1,0 +1,31 @@
+{
+  "name": "gatd-registrations-backend",
+  "version": "1.0.0",
+  "description": "Backend service for the GATD website Program Registration form (Node/Express + MySQL).",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js",
+    "serve": "node app.js",
+    "db:setup": "mysql -u root gatd < database/schema.sql && mysql -u root gatd < database/solutions_schema.sql && mysql -u root gatd < database/contact_schema.sql && mysql -u root gatd < database/brochure_schema.sql"
+  },
+  "keywords": [
+    "gatd",
+    "registrations",
+    "express",
+    "mysql"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
