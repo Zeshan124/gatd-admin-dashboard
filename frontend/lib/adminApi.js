@@ -75,6 +75,8 @@ async function request(path, { method = "GET", body, params, headers } = {}) {
 export const registrationsApi = {
   /** List with filters/search/sort/pagination → { data: [...], meta: {...} } */
   list: (params) => request("/registrations", { params }),
+  /** Distinct solutions + programmes for filter dropdowns → { data: { solutions, programs } } */
+  facets: () => request("/registrations/facets"),
   /** Single registration (full detail) → { data: {...} } */
   get: (id) => request(`/registrations/${id}`),
   /** Transition status → { data: {...} } */

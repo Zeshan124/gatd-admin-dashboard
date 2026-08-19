@@ -6,6 +6,31 @@ const { sendError } = require("../utils/http");
 const SORT_FIELDS = { created_at: "created_at", status: "status", total_amount_cents: "total_amount_cents" };
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const EXPORT_MAX_ROWS = 100000; // safety cap for a single export
+const SLUG_RE = /^[a-z0-9-]+$/i;
+
+/** The solution slug a registration came from, parsed from its source_page URL. */
+function solutionFromSourcePage(sp) {
+  if (!sp || typeof sp !== "string") return null;
+  const m = sp.match(/^\/solutions\/([a-z0-9-]+)/i);
+  return m ? m[1] : null;
+}
+
+/** "strategic-hr" → "Strategic HR" (HR/HRM etc. upper-cased for readability). */
+function prettifySlug(slug) {
+  if (!slug) return null;
+  return slug
+    .split("-")
+    .map((w) => (/^(hr|hrm|ceo|csr|kpi|tot)$/i.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(" ");
+}
+
+/** GROUP_CONCAT strings (titles '||'-joined, slugs ','-joined) → [{ slug, title }]. */
+function parseProgrammes(titlesConcat, slugsConcat) {
+  if (!titlesConcat) return [];
+  const titles = String(titlesConcat).split("||");
+  const slugs = String(slugsConcat || "").split(",");
+  return titles.map((t, i) => ({ title: t, slug: slugs[i] || null }));
+}
 
 /**
  * Build the shared WHERE clause + params from list/export query params
@@ -38,6 +63,16 @@ function buildFilters(q) {
     conditions.push("r.created_at <= ?");
     params.push(`${q.dateTo} 23:59:59`);
   }
+  // programme filter — registrations that include this programme slug
+  if (q.program && SLUG_RE.test(String(q.program))) {
+    conditions.push("EXISTS (SELECT 1 FROM registration_programs rp WHERE rp.registration_id = r.id AND rp.program_slug = ?)");
+    params.push(String(q.program));
+  }
+  // solution filter — matched against the source_page the form was submitted from
+  if (q.solution && SLUG_RE.test(String(q.solution))) {
+    conditions.push("(r.source_page = ? OR r.source_page LIKE ?)");
+    params.push(`/solutions/${q.solution}`, `/solutions/${q.solution}/%`);
+  }
   return { where: `WHERE ${conditions.join(" AND ")}`, params };
 }
 
@@ -66,6 +101,9 @@ function toSummary(r) {
     totalAmountCents: r.total_amount_cents,
     totalAmountFormatted: formatMoney(r.total_amount_cents, r.currency),
     programCount: r.program_count,
+    programs: parseProgrammes(r.programmes_concat, r.program_slugs_concat),
+    solutionSlug: solutionFromSourcePage(r.source_page),
+    solutionLabel: prettifySlug(solutionFromSourcePage(r.source_page)),
     createdAt: r.created_at,
   };
 }
@@ -90,8 +128,12 @@ async function listRegistrations(req, res) {
     const rows = await query(
       `SELECT r.id, r.reference_no, r.first_name, r.last_name, r.email,
               r.phone_dial_code, r.phone_number, r.country, r.organization,
-              r.status, r.is_spam, r.currency, r.total_amount_cents, r.created_at,
-              (SELECT COUNT(*) FROM registration_programs rp WHERE rp.registration_id = r.id) AS program_count
+              r.status, r.is_spam, r.currency, r.total_amount_cents, r.created_at, r.source_page,
+              (SELECT COUNT(*) FROM registration_programs rp WHERE rp.registration_id = r.id) AS program_count,
+              (SELECT GROUP_CONCAT(rp.program_title ORDER BY rp.id SEPARATOR '||')
+                 FROM registration_programs rp WHERE rp.registration_id = r.id) AS programmes_concat,
+              (SELECT GROUP_CONCAT(rp.program_slug ORDER BY rp.id SEPARATOR ',')
+                 FROM registration_programs rp WHERE rp.registration_id = r.id) AS program_slugs_concat
          FROM registrations r
          ${where}
          ORDER BY r.${field} ${dir}
@@ -151,6 +193,8 @@ async function getRegistration(req, res) {
         status: r.status,
         internalNotes: r.internal_notes,
         sourcePage: r.source_page,
+        solutionSlug: solutionFromSourcePage(r.source_page),
+        solutionLabel: prettifySlug(solutionFromSourcePage(r.source_page)),
         utm: { source: r.utm_source, medium: r.utm_medium, campaign: r.utm_campaign },
         ipAddress: r.ip_address,
         userAgent: r.user_agent,
@@ -182,6 +226,7 @@ const EXPORT_COLUMNS = [
   { header: "Designation", key: "designation", width: 20 },
   { header: "Organisation", key: "organization", width: 24 },
   { header: "Heard About Us", key: "hear_about_us", width: 18 },
+  { header: "Solution", key: "solution", width: 22, value: (r) => prettifySlug(solutionFromSourcePage(r.source_page)) || "" },
   { header: "Programmes", key: "programmes", width: 40, value: (r) => r.programmes || "" },
   { header: "Programme Count", key: "program_count", width: 15 },
   { header: "Currency", key: "currency", width: 10 },
@@ -265,4 +310,49 @@ async function exportRegistrations(req, res) {
   }
 }
 
-module.exports = { listRegistrations, getRegistration, exportRegistrations };
+/**
+ * GET /apis/registrations/facets   (admin, requires token)
+ * Distinct solutions (from source_page) and programmes present in registrations,
+ * for populating the list filter dropdowns.
+ */
+async function facetOptions(req, res) {
+  try {
+    const [progRows, solRows] = await Promise.all([
+      query(
+        `SELECT rp.program_slug AS slug, rp.program_title AS title
+           FROM registration_programs rp
+           JOIN registrations r ON r.id = rp.registration_id
+          WHERE r.delete_status = 0 AND r.is_spam = 0
+          GROUP BY rp.program_slug, rp.program_title
+          ORDER BY rp.program_title`
+      ),
+      query(
+        `SELECT DISTINCT source_page FROM registrations
+          WHERE delete_status = 0 AND is_spam = 0 AND source_page LIKE '/solutions/%'`
+      ),
+    ]);
+
+    const solutions = [];
+    const seen = new Set();
+    for (const row of solRows) {
+      const slug = solutionFromSourcePage(row.source_page);
+      if (slug && !seen.has(slug)) {
+        seen.add(slug);
+        solutions.push({ slug, label: prettifySlug(slug) });
+      }
+    }
+    solutions.sort((a, b) => a.label.localeCompare(b.label));
+
+    return res.json({
+      data: {
+        solutions,
+        programs: progRows.map((p) => ({ slug: p.slug, title: p.title })),
+      },
+    });
+  } catch (err) {
+    console.error("[registrations] facets error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not load filters");
+  }
+}
+
+module.exports = { listRegistrations, getRegistration, exportRegistrations, facetOptions };

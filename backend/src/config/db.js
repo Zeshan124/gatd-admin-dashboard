@@ -3,7 +3,9 @@ const mysql = require("mysql");
 // Connection pool (better than a single connection: survives idle timeouts and
 // handles concurrent requests). timezone 'Z' stores/reads TIMESTAMPs as UTC.
 const pool = mysql.createPool({
-  connectionLimit: 10,
+  // Kept small so the app is a good neighbour on shared hosting (server-wide
+  // MySQL connection limits are shared with any other sites on the account).
+  connectionLimit: 5,
   host: process.env.DB_HOST || "localhost",
   port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
   user: process.env.DB_USER || "root",

@@ -33,7 +33,11 @@ export default function RegistrationsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
+  const [solution, setSolution] = useState("");
+  const [program, setProgram] = useState("");
   const [page, setPage] = useState(1);
+
+  const [facets, setFacets] = useState({ solutions: [], programs: [] });
 
   const [selected, setSelected] = useState(null); // row summary
   const [detail, setDetail] = useState(null);
@@ -61,6 +65,8 @@ export default function RegistrationsPage() {
       const res = await registrationsApi.list({
         q,
         status,
+        solution,
+        program,
         page,
         pageSize: PAGE_SIZE,
         sort: SORT,
@@ -74,11 +80,19 @@ export default function RegistrationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [q, status, page]);
+  }, [q, status, solution, program, page]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Filter options (loaded once).
+  useEffect(() => {
+    registrationsApi
+      .facets()
+      .then((res) => setFacets(res.data || { solutions: [], programs: [] }))
+      .catch(() => {});
+  }, []);
 
   const openDetail = async (row) => {
     setSelected(row);
@@ -127,6 +141,8 @@ export default function RegistrationsPage() {
       const { blob, filename } = await registrationsApi.exportFile({
         q,
         status,
+        solution,
+        program,
         sort: SORT,
         ...(format === "csv" ? { format: "csv" } : {}),
       });
@@ -229,6 +245,36 @@ export default function RegistrationsPage() {
           )}
         </div>
         <select
+          value={solution}
+          onChange={(e) => {
+            setSolution(e.target.value);
+            setPage(1);
+          }}
+          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors max-w-56"
+        >
+          <option value="">All solutions</option>
+          {facets.solutions.map((s) => (
+            <option key={s.slug} value={s.slug}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={program}
+          onChange={(e) => {
+            setProgram(e.target.value);
+            setPage(1);
+          }}
+          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors max-w-64"
+        >
+          <option value="">All programmes</option>
+          {facets.programs.map((p) => (
+            <option key={p.slug} value={p.slug}>
+              {p.title}
+            </option>
+          ))}
+        </select>
+        <select
           value={status}
           onChange={(e) => {
             setStatus(e.target.value);
@@ -289,7 +335,8 @@ export default function RegistrationsPage() {
                   <th className="px-5 py-3 font-semibold">Reference</th>
                   <th className="px-5 py-3 font-semibold">Applicant</th>
                   <th className="px-5 py-3 font-semibold">Organisation</th>
-                  <th className="px-5 py-3 font-semibold text-center">Progs</th>
+                  <th className="px-5 py-3 font-semibold">Solution</th>
+                  <th className="px-5 py-3 font-semibold">Programme(s)</th>
                   <th className="px-5 py-3 font-semibold text-right">Total</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
                   <th className="px-5 py-3 font-semibold">Submitted</th>
@@ -314,8 +361,26 @@ export default function RegistrationsPage() {
                     <td className="px-5 py-3.5 text-slate-600">
                       {r.organization || "—"}
                     </td>
-                    <td className="px-5 py-3.5 text-center text-slate-600">
-                      {r.programCount ?? r.programs?.length ?? "—"}
+                    <td className="px-5 py-3.5">
+                      {r.solutionLabel || r.solutionSlug ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand ring-1 ring-inset ring-brand-100 whitespace-nowrap">
+                          {r.solutionLabel || r.solutionSlug}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-600 max-w-64">
+                      {r.programs?.length ? (
+                        <span className="block truncate" title={r.programs.map((p) => p.title).join(", ")}>
+                          {r.programs[0].title}
+                          {r.programs.length > 1 && (
+                            <span className="text-slate-400 font-medium"> +{r.programs.length - 1}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-right font-semibold text-slate-700 whitespace-nowrap">
                       {formatMoney(r.totalAmountCents, r.currency)}
@@ -466,6 +531,7 @@ function DetailDrawer({
                 <Field label="Email" value={d.email} />
                 <Field label="Phone" value={phone} />
                 <Field label="Country" value={d.country} />
+                <Field label="Solution" value={d.solutionLabel || d.solutionSlug} />
                 <Field label="Designation" value={d.designation} />
                 <Field label="Organisation" value={d.organization} />
                 <Field label="Heard via" value={d.hearAboutUs} />
