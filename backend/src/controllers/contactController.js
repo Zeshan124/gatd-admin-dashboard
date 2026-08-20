@@ -122,9 +122,11 @@ function toMessage(r) {
   };
 }
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
  * Build the shared WHERE clause + params from list/export query params
- * (status CSV, includeSpam, q search). Always excludes soft-deleted rows.
+ * (status CSV, includeSpam, q search, dateFrom/dateTo). Always excludes soft-deleted rows.
  */
 function buildFilters(q) {
   const conditions = ["delete_status = 0"];
@@ -142,6 +144,14 @@ function buildFilters(q) {
     const like = `%${String(q.q).trim()}%`;
     conditions.push("(first_name LIKE ? OR email LIKE ? OR subject LIKE ? OR message LIKE ?)");
     params.push(like, like, like, like);
+  }
+  if (q.dateFrom && DATE_RE.test(q.dateFrom)) {
+    conditions.push("created_at >= ?");
+    params.push(`${q.dateFrom} 00:00:00`);
+  }
+  if (q.dateTo && DATE_RE.test(q.dateTo)) {
+    conditions.push("created_at <= ?");
+    params.push(`${q.dateTo} 23:59:59`);
   }
   return { where: `WHERE ${conditions.join(" AND ")}`, params };
 }

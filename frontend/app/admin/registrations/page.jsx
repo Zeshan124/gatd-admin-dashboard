@@ -14,6 +14,7 @@ import {
   Loader2,
   FileSpreadsheet,
   FileText,
+  Calendar,
 } from "lucide-react";
 import { registrationsApi, API_BASE } from "@/lib/adminApi";
 import { formatMoney, formatDate, formatDateTime } from "@/lib/format";
@@ -35,6 +36,8 @@ export default function RegistrationsPage() {
   const [status, setStatus] = useState("");
   const [solution, setSolution] = useState("");
   const [program, setProgram] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
 
   const [facets, setFacets] = useState({ solutions: [], programs: [] });
@@ -67,6 +70,8 @@ export default function RegistrationsPage() {
         status,
         solution,
         program,
+        dateFrom,
+        dateTo,
         page,
         pageSize: PAGE_SIZE,
         sort: SORT,
@@ -80,7 +85,7 @@ export default function RegistrationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [q, status, solution, program, page]);
+  }, [q, status, solution, program, dateFrom, dateTo, page]);
 
   useEffect(() => {
     load();
@@ -143,6 +148,8 @@ export default function RegistrationsPage() {
         status,
         solution,
         program,
+        dateFrom,
+        dateTo,
         sort: SORT,
         ...(format === "csv" ? { format: "csv" } : {}),
       });
@@ -289,6 +296,46 @@ export default function RegistrationsPage() {
             </option>
           ))}
         </select>
+
+        {/* Date range */}
+        <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-lg px-3 py-2 focus-within:border-brand transition-colors">
+          <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+          <input
+            type="date"
+            value={dateFrom}
+            max={dateTo || undefined}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              setPage(1);
+            }}
+            aria-label="From date"
+            className="bg-transparent outline-none text-sm text-slate-700 w-36"
+          />
+          <span className="text-slate-400 text-sm">–</span>
+          <input
+            type="date"
+            value={dateTo}
+            min={dateFrom || undefined}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              setPage(1);
+            }}
+            aria-label="To date"
+            className="bg-transparent outline-none text-sm text-slate-700 w-36"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+                setPage(1);
+              }}
+              aria-label="Clear dates"
+            >
+              <X className="w-4 h-4 text-slate-400 hover:text-slate-600" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Export error */}
@@ -324,7 +371,9 @@ export default function RegistrationsPage() {
             <Inbox className="w-8 h-8 text-slate-300" />
             <p className="font-semibold text-slate-600">No registrations found</p>
             <p className="text-sm text-slate-400">
-              {q || status ? "Try adjusting your filters." : "New submissions will appear here."}
+              {q || status || solution || program || dateFrom || dateTo
+                ? "Try adjusting your filters."
+                : "New submissions will appear here."}
             </p>
           </div>
         ) : (
