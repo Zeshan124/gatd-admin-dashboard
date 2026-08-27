@@ -33,6 +33,56 @@ const countries = [
   { code: "JP", name: "Japan", dial: "+81" },
 ];
 
+// Accepted national-number length range [min, max] per country, in digits and
+// EXCLUDING the country code and any leading trunk "0" (the flag selector already
+// carries the dial code, so e.g. Pakistan is 3462284571 — 10 digits — not
+// 03462284571). `max` is also the hard input cap: the field refuses to accept
+// more digits than this once a country is selected. Any country not listed falls
+// back to the range below. Tweak a row here if the client reports a specific
+// country being too strict/loose.
+const PHONE_LEN = {
+  AE: [8, 9],   // UAE
+  SA: [8, 9],   // Saudi Arabia
+  SG: [8, 8],   // Singapore
+  GB: [9, 10],  // United Kingdom
+  US: [10, 10], // United States
+  IN: [10, 10], // India
+  PK: [10, 10], // Pakistan (3XXXXXXXXX)
+  MY: [9, 10],  // Malaysia
+  AU: [9, 9],   // Australia
+  CA: [10, 10], // Canada
+  DE: [6, 11],  // Germany (highly variable)
+  FR: [9, 9],   // France
+  QA: [8, 8],   // Qatar
+  KW: [8, 8],   // Kuwait
+  BH: [8, 8],   // Bahrain
+  OM: [8, 8],   // Oman
+  JO: [9, 9],   // Jordan
+  EG: [9, 10],  // Egypt
+  NG: [10, 10], // Nigeria
+  ZA: [9, 9],   // South Africa
+  KE: [9, 9],   // Kenya
+  PH: [10, 10], // Philippines
+  ID: [9, 11],  // Indonesia
+  TR: [10, 10], // Turkey
+  CN: [10, 11], // China
+  JP: [9, 10],  // Japan
+};
+const PHONE_LEN_FALLBACK = [7, 15]; // E.164: NSN is at most 15 digits.
+
+// Normalize raw phone input to the national number for `country`: keep digits
+// only, drop a pasted international/country-code prefix and any leading trunk 0,
+// then hard-cap to the country's max length so the field can't exceed it.
+function normalizePhone(raw, country) {
+  const max = (PHONE_LEN[country] || PHONE_LEN_FALLBACK)[1];
+  const cc = ((countries.find((c) => c.code === country) || {}).dial || "").replace(/\D/g, ""); // e.g. "92"
+  let digits = String(raw).replace(/\D/g, "");
+  if (cc && digits.startsWith("00" + cc)) digits = digits.slice(2 + cc.length);
+  else if (cc && digits.startsWith(cc) && digits.length > max) digits = digits.slice(cc.length);
+  digits = digits.replace(/^0+/, ""); // trunk 0 isn't part of the national number here
+  return digits.slice(0, max);
+}
+
 const programOptions = [
   { id: 1, slug: "strategic-hr-business-partnership", label: "Strategic HR Business Partnership & Beyond", price: 3850 },
   { id: 2, slug: "business-people-leadership", label: "Impactful Business and People Leadership", price: 3850 },
@@ -66,6 +116,7 @@ export default function ProgramRegistration({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [progDropOpen, setProgDropOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [result, setResult] = useState(null);
@@ -76,8 +127,30 @@ export default function ProgramRegistration({
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.dial.includes(search)
   );
 
+  // Per-country phone validation. `form.phone` is kept digits-only (see
+  // handlePhoneChange), so its length is the national-number digit count.
+  const [phoneMin, phoneMax] = PHONE_LEN[dialCode] || PHONE_LEN_FALLBACK;
+  const phoneLenLabel = phoneMin === phoneMax ? `${phoneMin}` : `${phoneMin}–${phoneMax}`;
+  const phoneValid =
+    form.phone.length >= phoneMin && form.phone.length <= phoneMax;
+  const phoneError = !form.phone
+    ? "Phone number is required."
+    : !phoneValid
+    ? `Enter a valid ${selectedCountry.name} phone number (${phoneLenLabel} digits).`
+    : "";
+
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  // Phone: normalize to the national number (digits only, no trunk 0, capped).
+  const handlePhoneChange = (e) =>
+    setForm((prev) => ({ ...prev, phone: normalizePhone(e.target.value, dialCode) }));
+
+  // Switching country re-caps the existing number to the new country's max.
+  const selectCountry = (code) => {
+    setDialCode(code);
+    setForm((prev) => ({ ...prev, phone: normalizePhone(prev.phone, code) }));
+  };
 
   const toggleProgram = (prog) => {
     setSelectedPrograms((prev) =>
@@ -104,6 +177,13 @@ export default function ProgramRegistration({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+
+    if (!phoneValid) {
+      setPhoneTouched(true);
+      setStatus("error");
+      setErrorMsg(phoneError);
+      return;
+    }
 
     if (selectedPrograms.length === 0) {
       setStatus("error");
@@ -158,6 +238,7 @@ export default function ProgramRegistration({
       });
       setSelectedPrograms([]);
       setHoneypot("");
+      setPhoneTouched(false);
     } catch (err) {
       setErrorMsg("Unable to reach the server. Please try again later.");
       setStatus("error");
@@ -258,7 +339,12 @@ export default function ProgramRegistration({
             placeholder="Email Address" className={inputClass} />
 
           {/* Phone with country selector */}
-          <div className="relative flex items-center bg-white border border-slate-300 focus-within:border-[#D52029] rounded-md transition-colors duration-200">
+          <div>
+          <div className={`relative flex items-center bg-white border rounded-md transition-colors duration-200 ${
+            phoneTouched && phoneError
+              ? "border-[#D52029]"
+              : "border-slate-300 focus-within:border-[#D52029]"
+          }`}>
             <button
               type="button"
               onClick={() => { setDropdownOpen((p) => !p); setSearch(""); }}
@@ -271,8 +357,11 @@ export default function ProgramRegistration({
               </svg>
             </button>
             <div className="w-px h-5 bg-slate-300 mr-3 shrink-0" />
-            <input name="phone" type="tel" value={form.phone} onChange={handleChange} required
+            <input name="phone" type="tel" inputMode="numeric" maxLength={phoneMax}
+              value={form.phone} onChange={handlePhoneChange}
+              onBlur={() => setPhoneTouched(true)} required
               placeholder="Phone Number"
+              aria-invalid={phoneTouched && !!phoneError}
               className="flex-1 bg-transparent outline-none py-4 pr-5 text-sm text-[#414143] placeholder-[#414143]" />
             {dropdownOpen && (
               <div className="absolute top-full left-0 z-50 mt-1 w-64 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden">
@@ -283,7 +372,7 @@ export default function ProgramRegistration({
                 <ul className="max-h-52 overflow-y-auto">
                   {filtered.map((c) => (
                     <li key={c.code}>
-                      <button type="button" onClick={() => { setDialCode(c.code); setDropdownOpen(false); setSearch(""); }}
+                      <button type="button" onClick={() => { selectCountry(c.code); setDropdownOpen(false); setSearch(""); }}
                         className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-red-50 hover:text-[#D52029] transition-colors text-left">
                         <img src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`} alt={c.name} className="w-6 h-4 object-cover rounded-sm shrink-0" />
                         <span className="flex-1">{c.name}</span>
@@ -295,6 +384,10 @@ export default function ProgramRegistration({
                 </ul>
               </div>
             )}
+          </div>
+          {phoneTouched && phoneError && (
+            <p className="mt-1.5 text-xs font-medium text-[#D52029]">{phoneError}</p>
+          )}
           </div>
 
           {/* Country */}

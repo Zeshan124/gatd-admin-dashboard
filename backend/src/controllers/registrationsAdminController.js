@@ -310,6 +310,59 @@ async function exportRegistrations(req, res) {
   }
 }
 
+// Allowed workflow statuses — mirrors REGISTRATION_STATUSES in the frontend
+// (components/admin/StatusBadge.jsx) and §9 of docs/program-registrations-backend.md.
+// The DB column is a plain VARCHAR, so validity is enforced here.
+const ALLOWED_STATUSES = new Set([
+  "new", "contacted", "in_review", "confirmed", "invoiced",
+  "paid", "enrolled", "cancelled", "rejected", "spam",
+]);
+
+/**
+ * POST /apis/registrations/:id/status   (admin, requires token)
+ * Update a registration's workflow status (and an optional internal note).
+ */
+async function updateRegistrationStatus(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return sendError(res, 400, "BAD_REQUEST", "Invalid id");
+
+    const status = typeof req.body.status === "string" ? req.body.status.trim() : "";
+    if (!status) {
+      return sendError(res, 422, "VALIDATION_ERROR", "Status is required", { status: "Status is required" });
+    }
+    if (!ALLOWED_STATUSES.has(status)) {
+      return sendError(res, 422, "VALIDATION_ERROR", "Unknown status", { status: `Unsupported status: ${status}` });
+    }
+
+    // Optional internal note to store alongside the transition.
+    const note = typeof req.body.note === "string" ? req.body.note.trim() : "";
+
+    const existing = await query(
+      `SELECT id FROM registrations WHERE id = ? AND delete_status = 0 LIMIT 1`,
+      [id]
+    );
+    if (!existing[0]) return sendError(res, 404, "NOT_FOUND", "Registration not found");
+
+    if (note) {
+      await query(
+        `UPDATE registrations SET status = ?, internal_notes = ? WHERE id = ? AND delete_status = 0`,
+        [status, note, id]
+      );
+    } else {
+      await query(
+        `UPDATE registrations SET status = ? WHERE id = ? AND delete_status = 0`,
+        [status, id]
+      );
+    }
+
+    return res.json({ data: { id, status } });
+  } catch (err) {
+    console.error("[registrations] status update error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not update status");
+  }
+}
+
 /**
  * GET /apis/registrations/facets   (admin, requires token)
  * Distinct solutions (from source_page) and programmes present in registrations,
@@ -355,4 +408,4 @@ async function facetOptions(req, res) {
   }
 }
 
-module.exports = { listRegistrations, getRegistration, exportRegistrations, facetOptions };
+module.exports = { listRegistrations, getRegistration, exportRegistrations, facetOptions, updateRegistrationStatus };

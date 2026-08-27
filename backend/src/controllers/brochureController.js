@@ -7,6 +7,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_RE = /^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u;
 const SOURCE_TYPES = ["solution", "program"];
 const BROCHURE_STATUSES = ["new", "contacted", "archived"];
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Clean a value to a trimmed single-line string (control chars -> space). */
 function cleanStr(v) {
@@ -112,7 +113,7 @@ function toLead(r) {
   };
 }
 
-/** Shared WHERE builder for list + export (type, status, includeSpam, q). */
+/** Shared WHERE builder for list + export (type, status, includeSpam, q, dateFrom/dateTo). */
 function buildFilters(q) {
   const conditions = ["delete_status = 0"];
   const params = [];
@@ -133,6 +134,14 @@ function buildFilters(q) {
     const like = `%${String(q.q).trim()}%`;
     conditions.push("(name LIKE ? OR email LIKE ? OR organization LIKE ? OR item_title LIKE ?)");
     params.push(like, like, like, like);
+  }
+  if (q.dateFrom && DATE_RE.test(q.dateFrom)) {
+    conditions.push("created_at >= ?");
+    params.push(`${q.dateFrom} 00:00:00`);
+  }
+  if (q.dateTo && DATE_RE.test(q.dateTo)) {
+    conditions.push("created_at <= ?");
+    params.push(`${q.dateTo} 23:59:59`);
   }
   return { where: `WHERE ${conditions.join(" AND ")}`, params };
 }

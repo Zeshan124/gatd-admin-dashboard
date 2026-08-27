@@ -16,6 +16,7 @@ import {
   Loader2,
   FileSpreadsheet,
   FileText,
+  Calendar,
 } from "lucide-react";
 import { brochuresApi, API_BASE } from "@/lib/adminApi";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -47,6 +48,8 @@ export default function BrochuresPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [sourceType, setSourceType] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
 
   const [selected, setSelected] = useState(null);
@@ -71,7 +74,7 @@ export default function BrochuresPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await brochuresApi.list({ q, status, sourceType, page, pageSize: PAGE_SIZE });
+      const res = await brochuresApi.list({ q, status, sourceType, dateFrom, dateTo, page, pageSize: PAGE_SIZE });
       setRows(res.data || []);
       setMeta(res.meta || null);
     } catch (e) {
@@ -81,7 +84,7 @@ export default function BrochuresPage() {
     } finally {
       setLoading(false);
     }
-  }, [q, status, sourceType, page]);
+  }, [q, status, sourceType, dateFrom, dateTo, page]);
 
   useEffect(() => {
     load();
@@ -133,6 +136,8 @@ export default function BrochuresPage() {
         q,
         status,
         sourceType,
+        dateFrom,
+        dateTo,
         ...(format === "csv" ? { format: "csv" } : {}),
       });
       const url = URL.createObjectURL(blob);
@@ -243,6 +248,46 @@ export default function BrochuresPage() {
             </option>
           ))}
         </select>
+
+        {/* Date range */}
+        <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-lg px-3 py-2 focus-within:border-brand transition-colors">
+          <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+          <input
+            type="date"
+            value={dateFrom}
+            max={dateTo || undefined}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              setPage(1);
+            }}
+            aria-label="From date"
+            className="bg-transparent outline-none text-sm text-slate-700 w-36"
+          />
+          <span className="text-slate-400 text-sm">–</span>
+          <input
+            type="date"
+            value={dateTo}
+            min={dateFrom || undefined}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              setPage(1);
+            }}
+            aria-label="To date"
+            className="bg-transparent outline-none text-sm text-slate-700 w-36"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+                setPage(1);
+              }}
+              aria-label="Clear dates"
+            >
+              <X className="w-4 h-4 text-slate-400 hover:text-slate-600" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Export error */}
@@ -275,7 +320,9 @@ export default function BrochuresPage() {
             <Inbox className="w-8 h-8 text-slate-300" />
             <p className="font-semibold text-slate-600">No brochure leads found</p>
             <p className="text-sm text-slate-400">
-              {q || status || sourceType ? "Try adjusting your filters." : "New downloads will appear here."}
+              {q || status || sourceType || dateFrom || dateTo
+                ? "Try adjusting your filters."
+                : "New downloads will appear here."}
             </p>
           </div>
         ) : (
@@ -457,15 +504,6 @@ function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeS
               )}
 
               <Field label="Source page" value={d.sourcePage} />
-
-              <a
-                href={`mailto:${d.email}?subject=${encodeURIComponent(
-                  d.itemTitle ? `${d.itemTitle} — GATD` : "GATD programme information"
-                )}`}
-                className="inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg bg-brand hover:bg-brand-dark text-white text-sm font-bold transition-colors"
-              >
-                Reply by email
-              </a>
             </>
           )}
         </div>

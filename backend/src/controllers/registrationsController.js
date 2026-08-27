@@ -4,6 +4,7 @@ const { dialCodeFor } = require("../utils/countries");
 const { formatMoney } = require("../utils/money");
 const { nextReferenceNo } = require("../utils/reference");
 const { sendError } = require("../utils/http");
+const { sendRegistrationEmails } = require("../utils/registrationEmails");
 
 // Window (minutes) within which an identical resubmission is treated as a
 // duplicate and returns the existing reference instead of creating a new row.
@@ -169,6 +170,17 @@ async function createRegistration(req, res) {
 
       return ref;
     });
+
+    // 7) Fire the confirmation + internal-notification emails. Best-effort and
+    // fire-and-forget: never block or fail the response on email trouble.
+    sendRegistrationEmails({
+      value,
+      dialCode,
+      referenceNo,
+      programs,
+      currency,
+      totalAmountCents,
+    }).catch((err) => console.error("[registrations] email error:", err));
 
     return res.status(201).json(
       publicPayload({

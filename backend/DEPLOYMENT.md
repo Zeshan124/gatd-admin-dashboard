@@ -1,16 +1,21 @@
 # Deploying the GATD backend + database on Namecheap cPanel
 
-Frontend stays on **Vercel**; only the **Express API** and **MySQL database** go on
-Namecheap.
+**All three (frontend, backend, database) run on Namecheap cPanel.** The frontend is a
+Next.js **static export** (plain HTML/CSS/JS — no Node process); the backend is a Node
+app; the database is MySQL.
 
 **This deployment's concrete values:**
-- Website (frontend, Vercel): **`https://gatd.com`** (+ `www.gatd.com`) — apex/www DNS → Vercel.
-- API (backend, Namecheap): **`https://api.gatd.com`** — the `api` subdomain's DNS → this server.
-- cPanel account primary domain: `globalatd.com` (home `/home/globghnp`). The API is a
-  **different domain** (`gatd.com`), so `api.gatd.com` is added as a new/addon domain in
-  cPanel and needs its **DNS A record pointed here manually** (see step 1).
+- Website (frontend, static): **`https://gatd.com`** (+ `www.gatd.com`) — static files in a cPanel docroot.
+- API (backend, Node app): **`https://api.gatd.com`**.
+- Database: MySQL on the same account.
+- cPanel account **primary** domain: `globalatd.com` (home `/home/globghnp`) — the client's
+  existing site, **left untouched**. `gatd.com` is a **different** domain added here for the
+  new project.
+- **DNS:** point `gatd.com`'s nameservers to Namecheap hosting (`dns1.namecheaphosting.com` /
+  `dns2.namecheaphosting.com`) so both `gatd.com` and `api.gatd.com` resolve here
+  automatically (step 1). This changes only `gatd.com`; `globalatd.com` is unaffected.
 
-Everywhere below, `api.yourdomain.com` = `api.gatd.com`, `your-site.vercel.app` = `gatd.com`.
+Everywhere below, the frontend host is `gatd.com` and the API host is `api.gatd.com`.
 
 > Prerequisite: a Namecheap plan with **Node.js** support in cPanel (Stellar Plus /
 > Business, or any plan that shows **Setup Node.js App**). If you don't see that
@@ -63,14 +68,25 @@ never affects the old site: Setup Node.js App → **Delete** the app; **Remove**
 
 ---
 
-## 1. Create the subdomain for the API
+## 1. Point gatd.com here + create the two domains
 
-cPanel → **Domains** → **Create A New Domain** → `api.yourdomain.com`
-(document root e.g. `api.yourdomain.com`).
+Since **everything is on cPanel**, make Namecheap hosting authoritative for gatd.com:
 
-**DNS note:** your site's DNS may be pointed at Vercel. The `api` subdomain must
-resolve to the **Namecheap server IP** (cPanel → right sidebar → *Shared IP
-Address*). Wherever your DNS is managed, add an **A record**: `api` → that IP.
+1. At gatd.com's registrar, set its **nameservers** to `dns1.namecheaphosting.com`
+   and `dns2.namecheaphosting.com`, then wait for propagation. (Affects only
+   `gatd.com`; the existing `globalatd.com` site is untouched.)
+2. cPanel → **Domains → Create A New Domain** (twice), each with **"Share document
+   root" unchecked**:
+   - **`gatd.com`** — the frontend. Note its doc root (e.g. `/home/globghnp/gatd.com`);
+     the static site goes here (step 10).
+   - **`api.gatd.com`** — the backend. Separate doc root (e.g. `/home/globghnp/api.gatd.com`).
+
+Once nameservers propagate, both resolve here automatically — no manual A records, and
+the "domain pointed to remote nameservers" validation prompt goes away.
+
+> **Alternative** (keep gatd.com DNS elsewhere): leave nameservers as-is, validate each
+> domain via cPanel's **DNS-based (TXT)** method, and add A records `@`, `www`, and `api`
+> → your cPanel **Shared IP** (right sidebar → *General Information*).
 
 ---
 
@@ -125,7 +141,7 @@ cPanel → **Setup Node.js App** → **Create Application**:
 | Node.js version | 18.x or 20.x (latest LTS offered) |
 | Application mode | **Production** (this sets `NODE_ENV=production`) |
 | Application root | `gatd-api` (where you uploaded the files) |
-| Application URL | `api.yourdomain.com` |
+| Application URL | `api.gatd.com` |
 | Application startup file | `app.js` |
 
 Click **Create**. Passenger now manages the process (auto-starts, auto-restarts on
@@ -149,12 +165,32 @@ DB_PASSWORD=your-db-password
 JWT_SECRET=<long-random-string>     # generate a NEW one, e.g. `openssl rand -hex 48`
 JWT_EXPIRES_IN=12h
 ADMIN_SIGNUP_KEY=<your-signup-key>  # keep private; needed to create admin accounts
-CORS_ORIGINS=https://your-site.vercel.app,https://www.yourdomain.com,https://yourdomain.com
+CORS_ORIGINS=https://gatd.com,https://www.gatd.com
+
+# Email (SMTP) — registration confirmation + internal notification.
+# The app runs ON the cPanel mail server, so send via localhost (avoids the
+# firewall / SMTP-restrictions / NAT-hairpin issues you hit using the public host).
+SMTP_HOST=localhost
+SMTP_PORT=465                       # 465 (SSL) or 587 (STARTTLS)
+SMTP_SECURE=true                    # true for 465
+SMTP_TLS_REJECT_UNAUTHORIZED=false  # localhost cert won't match "localhost"
+SMTP_USER=register@globalatd.com    # the cPanel mailbox login
+SMTP_PASSWORD=<mailbox-password>
+MAIL_FROM=GATD <register@globalatd.com>
+MAIL_NOTIFY=register@globalatd.com  # internal copy of every registration
 ```
+
+> **Local dev** connects over the internet, so there use `SMTP_HOST=globalatd.com`
+> and leave `SMTP_TLS_REJECT_UNAUTHORIZED` unset (the cert matches). Only
+> production (on-server) needs `localhost` + the relaxed cert check.
 
 - **CORS_ORIGINS** must list the exact origin(s) the site is served from (no trailing
   slash). If it's wrong, the browser blocks every API call.
 - **Generate a fresh `JWT_SECRET`** for production (don't reuse the dev value).
+- **SMTP:** create the `register@globalatd.com` mailbox in cPanel → *Email Accounts*
+  first, then use its credentials here. Find the exact host/port under cPanel →
+  *Email Accounts → Connect Devices*. If SMTP vars are left blank, registrations
+  still save — only the emails are skipped (a warning is logged).
 
 ---
 
@@ -166,46 +202,54 @@ mysql, bcryptjs, jsonwebtoken, exceljs — all pure-JS, no compiler needed). The
 
 Sanity check (browser or curl):
 ```
-https://api.yourdomain.com/health      → {"status":"ok"}
-https://api.yourdomain.com/apis/programs → the 8 seeded programmes
+https://api.gatd.com/health      → {"status":"ok"}
+https://api.gatd.com/apis/programs → the 8 seeded programmes
 ```
 
 ---
 
-## 8. Enable HTTPS
+## 8. Enable HTTPS (both domains)
 
-cPanel → **SSL/TLS Status** → tick `api.yourdomain.com` → **Run AutoSSL**
-(Let's Encrypt). The site is HTTPS, so the API must be HTTPS too or browsers block
-it as mixed content.
+cPanel → **SSL/TLS Status** → tick **`api.gatd.com`**, **`gatd.com`**, **`www.gatd.com`**
+→ **Run AutoSSL** (Let's Encrypt). Everything must be HTTPS or browsers block mixed content.
 
 ---
 
 ## 9. Create the first admin account
 
 ```bash
-curl -X POST https://api.yourdomain.com/apis/auth/signup \
+curl -X POST https://api.gatd.com/apis/auth/signup \
   -H "Content-Type: application/json" \
   -H "x-signup-key: <ADMIN_SIGNUP_KEY>" \
-  -d '{"name":"Admin","email":"you@yourdomain.com","password":"a-strong-password"}'
+  -d '{"name":"Admin","email":"you@gatd.com","password":"a-strong-password"}'
 ```
-Then log in from the dashboard. (Keep `ADMIN_SIGNUP_KEY` private; rotate it once the
-needed accounts exist.)
+Then log in at `https://gatd.com/admin/`. (Keep `ADMIN_SIGNUP_KEY` private; rotate it
+once the needed accounts exist.)
 
 ---
 
-## 10. Point the Vercel frontend at the new API
+## 10. Deploy the frontend (static export) to gatd.com
 
-Vercel → Project → **Settings → Environment Variables** (Production) → add, then
-**redeploy** (these are `NEXT_PUBLIC_*`, baked in at build time):
+The site is a Next.js **static export** — build it locally, then upload the output.
 
-```
-NEXT_PUBLIC_ADMIN_API=https://api.yourdomain.com/apis
-NEXT_PUBLIC_REGISTRATIONS_API=https://api.yourdomain.com/apis/registrations
-NEXT_PUBLIC_CONTACT_API=https://api.yourdomain.com/apis/contact
-NEXT_PUBLIC_BROCHURE_API=https://api.yourdomain.com/apis/brochure-leads
-```
-Leave `NEXT_PUBLIC_SIGNUP_KEY` **unset** in production (anything `NEXT_PUBLIC_*` ships
-to the browser — create admins with the curl above instead).
+1. In `frontend/`, create **`.env.production`** (copy `.env.production.example`):
+   ```
+   NEXT_PUBLIC_ADMIN_API=https://api.gatd.com/apis
+   NEXT_PUBLIC_REGISTRATIONS_API=https://api.gatd.com/apis/registrations
+   NEXT_PUBLIC_CONTACT_API=https://api.gatd.com/apis/contact
+   NEXT_PUBLIC_BROCHURE_API=https://api.gatd.com/apis/brochure-leads
+   ```
+   (Leave `NEXT_PUBLIC_SIGNUP_KEY` unset — anything `NEXT_PUBLIC_*` ships to the browser.)
+2. `npm install` then **`npm run build`** → produces the **`out/`** folder.
+3. Upload the **contents of `out/`** (not the folder itself) into gatd.com's document
+   root (e.g. `/home/globghnp/gatd.com`) — File Manager (zip → upload → Extract) or FTP.
+   `index.html` must sit directly in the docroot.
+4. Test `https://gatd.com` and the dashboard at `https://gatd.com/admin/`.
+
+`trailingSlash: true` is set, so every route is `route/index.html` — clean URLs and
+admin deep-link refreshes work on Apache with no `.htaccess` rewrites.
+
+**Rebuilding after changes:** re-run `npm run build` locally and re-upload `out/`.
 
 ---
 

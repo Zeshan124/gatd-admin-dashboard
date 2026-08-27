@@ -33,18 +33,18 @@ The website is built with `next.config.mjs → output: "export"` (a fully static
 
 From the component's `form` state + selection state:
 
-| UI field | Form key | Notes |
-|---|---|---|
-| First Name | `firstName` | Free text. No last-name field today (see Open Questions). |
-| Email Address | `email` | Free text, `type="email"`. |
-| Phone Number | `phone` | Digits typed by the user. |
-| Phone country (flag selector) | `dialCode` | ISO-2 country code, e.g. `"AE"`; maps to a dial code (`+971`). Defaults to `AE`. |
-| Country | `country` | **Separate free-text input** (distinct from the phone selector). |
-| Designation | `designation` | Job title. |
-| Organization | `organization` | Company/employer. |
-| "From where do you hear?" | `source` | Lead-source free text. |
-| Programme(s) | `selectedPrograms[]` | Multi-select; each `{ id, label, price }`. **At least one required for a valid registration.** |
-| Total | `totalAmount` | Computed **client-side** — **do not trust**; recompute server-side (§7). |
+| UI field                      | Form key             | Notes                                                                                          |
+| ----------------------------- | -------------------- | ---------------------------------------------------------------------------------------------- |
+| First Name                    | `firstName`          | Free text. No last-name field today (see Open Questions).                                      |
+| Email Address                 | `email`              | Free text, `type="email"`.                                                                     |
+| Phone Number                  | `phone`              | Digits typed by the user.                                                                      |
+| Phone country (flag selector) | `dialCode`           | ISO-2 country code, e.g. `"AE"`; maps to a dial code (`+971`). Defaults to `AE`.               |
+| Country                       | `country`            | **Separate free-text input** (distinct from the phone selector).                               |
+| Designation                   | `designation`        | Job title.                                                                                     |
+| Organization                  | `organization`       | Company/employer.                                                                              |
+| "From where do you hear?"     | `source`             | Lead-source free text.                                                                         |
+| Programme(s)                  | `selectedPrograms[]` | Multi-select; each `{ id, label, price }`. **At least one required for a valid registration.** |
+| Total                         | `totalAmount`        | Computed **client-side** — **do not trust**; recompute server-side (§7).                       |
 
 > ⚠️ The client currently identifies programmes by ad-hoc numeric `id`s (`1,2,3,4,9,10,11,12`) that **do not** match the programme slugs used in routing/data. The backend must key programmes on a **stable `slug`** (§3.1). Recommend updating the form to submit slugs; until then, maintain an id→slug map on the server.
 
@@ -87,16 +87,16 @@ CREATE TABLE programs (
 
 **Seed data** (from `lib/programsData.js`; SGD):
 
-| slug | title | price (SGD) |
-|---|---|---|
-| `strategic-hr-business-partnership` | Strategic HR Business Partnership & Beyond | 3850 |
-| `business-people-leadership` | Impactful Business and People Leadership | 3850 |
-| `performance-rewards` | Performance Development and Rewards Management | 2800 |
-| `resourcing-talent-learning` | Resourcing, Talent and Learning Management | 2800 |
-| `impactive-hr` | Impactive HR for the Uninitiated | 2800 |
-| `progressing-org-development` | Progressing Organization Development | 2800 |
-| `advancing-trainer-development` | Advancing Trainer Development (ToT) | 2800 |
-| `management-best-practices` | Management: Best Practices for Best Results | 3850 |
+| slug                                | title                                          | price (SGD) |
+| ----------------------------------- | ---------------------------------------------- | ----------- |
+| `strategic-hr-business-partnership` | Strategic HR Business Partnership & Beyond     | 3850        |
+| `business-people-leadership`        | Impactful Business and People Leadership       | 3850        |
+| `performance-rewards`               | Performance Development and Rewards Management | 2800        |
+| `resourcing-talent-learning`        | Resourcing, Talent and Learning Management     | 2800        |
+| `impactive-hr`                      | Impactive HR for the Uninitiated               | 2800        |
+| `progressing-org-development`       | Progressing Organization Development           | 2800        |
+| `advancing-trainer-development`     | Advancing Trainer Development (ToT)            | 2800        |
+| `management-best-practices`         | Management: Best Practices for Best Results    | 3850        |
 
 ### 3.2 `registrations` — one row per submitted form
 
@@ -207,6 +207,7 @@ Base URL example: `https://api.globalatd.com/v1`. All responses are JSON. All ti
 Called by the website form. Rate-limited + spam-protected (§10).
 
 **Request body**
+
 ```json
 {
   "firstName": "Aisha",
@@ -220,11 +221,12 @@ Called by the website form. Rate-limited + spam-protected (§10).
   "programSlugs": ["strategic-hr-business-partnership", "performance-rewards"],
   "sourcePage": "/solutions/strategic-hr/strategic-hr-business-partnership",
   "utm": { "source": "google", "medium": "cpc", "campaign": "hr-q3" },
-  "honeypot": ""                       // must be empty; see §10
+  "honeypot": "" // must be empty; see §10
 }
 ```
 
 **Success `201 Created`**
+
 ```json
 {
   "data": {
@@ -234,8 +236,16 @@ Called by the website form. Rate-limited + spam-protected (§10).
     "totalAmountCents": 665000,
     "totalAmountFormatted": "SGD 6,650",
     "programs": [
-      { "slug": "strategic-hr-business-partnership", "title": "Strategic HR Business Partnership & Beyond", "unitPriceCents": 385000 },
-      { "slug": "performance-rewards", "title": "Performance Development and Rewards Management", "unitPriceCents": 280000 }
+      {
+        "slug": "strategic-hr-business-partnership",
+        "title": "Strategic HR Business Partnership & Beyond",
+        "unitPriceCents": 385000
+      },
+      {
+        "slug": "performance-rewards",
+        "title": "Performance Development and Rewards Management",
+        "unitPriceCents": 280000
+      }
     ]
   }
 }
@@ -246,32 +256,33 @@ The response deliberately **omits** internal fields (id, notes, IP, assignment).
 
 ### 4.2 Auth
 
-| Method | Path | Purpose |
-|---|---|---|
-| `POST` | `/auth/login` | Email + password → JWT (access + refresh) or session cookie. |
-| `POST` | `/auth/logout` | Invalidate session/refresh token. |
-| `GET`  | `/auth/me` | Current admin user + role. |
+| Method | Path           | Purpose                                                      |
+| ------ | -------------- | ------------------------------------------------------------ |
+| `POST` | `/auth/login`  | Email + password → JWT (access + refresh) or session cookie. |
+| `POST` | `/auth/logout` | Invalidate session/refresh token.                            |
+| `GET`  | `/auth/me`     | Current admin user + role.                                   |
 
 ### 4.3 Admin (authenticated + authorized — §8)
 
-| Method | Path | Purpose | Min role |
-|---|---|---|---|
-| `GET`    | `/admin/registrations` | List with filter/search/sort/paginate (§4.4) | viewer |
-| `GET`    | `/admin/registrations/:id` | Full detail incl. programmes + status history | viewer |
-| `PATCH`  | `/admin/registrations/:id` | Update `assignedTo`, `internalNotes` | sales_agent |
-| `POST`   | `/admin/registrations/:id/status` | Transition status (§9) with optional note | sales_agent |
-| `POST`   | `/admin/registrations/:id/spam` | Flag/unflag as spam | admin |
-| `DELETE` | `/admin/registrations/:id` | **Soft** delete (`deleted_at`) | admin |
-| `GET`    | `/admin/registrations/export` | CSV/XLSX export honoring current filters | viewer |
-| `GET`    | `/admin/registrations/stats` | Dashboard metrics (§13) | viewer |
-| `GET`    | `/admin/programs` | List programmes + prices | viewer |
-| `POST`   | `/admin/programs` | Create programme | super_admin |
-| `PATCH`  | `/admin/programs/:id` | Update price/title/active | admin |
-| `GET/POST/PATCH` | `/admin/users` | Manage dashboard accounts | super_admin |
+| Method           | Path                              | Purpose                                       | Min role    |
+| ---------------- | --------------------------------- | --------------------------------------------- | ----------- |
+| `GET`            | `/admin/registrations`            | List with filter/search/sort/paginate (§4.4)  | viewer      |
+| `GET`            | `/admin/registrations/:id`        | Full detail incl. programmes + status history | viewer      |
+| `PATCH`          | `/admin/registrations/:id`        | Update `assignedTo`, `internalNotes`          | sales_agent |
+| `POST`           | `/admin/registrations/:id/status` | Transition status (§9) with optional note     | sales_agent |
+| `POST`           | `/admin/registrations/:id/spam`   | Flag/unflag as spam                           | admin       |
+| `DELETE`         | `/admin/registrations/:id`        | **Soft** delete (`deleted_at`)                | admin       |
+| `GET`            | `/admin/registrations/export`     | CSV/XLSX export honoring current filters      | viewer      |
+| `GET`            | `/admin/registrations/stats`      | Dashboard metrics (§13)                       | viewer      |
+| `GET`            | `/admin/programs`                 | List programmes + prices                      | viewer      |
+| `POST`           | `/admin/programs`                 | Create programme                              | super_admin |
+| `PATCH`          | `/admin/programs/:id`             | Update price/title/active                     | admin       |
+| `GET/POST/PATCH` | `/admin/users`                    | Manage dashboard accounts                     | super_admin |
 
 ### 4.4 List endpoint contract — `GET /admin/registrations`
 
 **Query params**
+
 ```
 ?status=new,contacted        # CSV of statuses
 &assignedTo=5                 # admin_user id  (or 'unassigned')
@@ -284,13 +295,23 @@ The response deliberately **omits** internal fields (id, notes, IP, assignment).
 ```
 
 **Response**
+
 ```json
 {
-  "data": [ { "id": 123, "referenceNo": "REG-2026-000123", "firstName": "Aisha",
-              "email": "aisha@example.com", "organization": "Acme Group",
-              "status": "new", "assignedTo": null,
-              "totalAmountCents": 665000, "programCount": 2,
-              "createdAt": "2026-08-07T09:14:22Z" } ],
+  "data": [
+    {
+      "id": 123,
+      "referenceNo": "REG-2026-000123",
+      "firstName": "Aisha",
+      "email": "aisha@example.com",
+      "organization": "Acme Group",
+      "status": "new",
+      "assignedTo": null,
+      "totalAmountCents": 665000,
+      "programCount": 2,
+      "createdAt": "2026-08-07T09:14:22Z"
+    }
+  ],
   "meta": { "page": 1, "pageSize": 25, "total": 342, "totalPages": 14 }
 }
 ```
@@ -302,8 +323,13 @@ The response deliberately **omits** internal fields (id, notes, IP, assignment).
 - **Content-Type:** `application/json; charset=utf-8`.
 - **Errors** use a consistent envelope:
   ```json
-  { "error": { "code": "VALIDATION_ERROR", "message": "…",
-               "fields": { "email": "Must be a valid email address" } } }
+  {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "…",
+      "fields": { "email": "Must be a valid email address" }
+    }
+  }
   ```
 - **HTTP codes:** `200` OK, `201` created, `400` bad request, `401` unauthenticated, `403` forbidden, `404` not found, `409` conflict (invalid status transition), `422` validation, `429` rate-limited, `500` server error.
 - **Pagination** default `pageSize=25`, hard max `100`.
@@ -315,20 +341,20 @@ The response deliberately **omits** internal fields (id, notes, IP, assignment).
 
 Validate **server-side** regardless of client checks. Reject with `422` and per-field messages.
 
-| Field | Required | Rules |
-|---|---|---|
-| `firstName` | ✅ | 2–120 chars; letters/spaces/`.-'` ; trim; strip control chars. |
-| `email` | ✅ | Valid RFC-5322 email; ≤255; lowercased; MX/deliverability optional. |
-| `phoneCountry` | ✅ | Must be one of the supported ISO-2 codes (§ country list). |
-| `phoneNumber` | ✅ | 4–20 chars; digits/spaces/`-`/`(` `)`; strip formatting; optionally validate against dial code with `libphonenumber`. |
-| `country` | ⭕ (recommended ✅) | ≤120 chars. |
-| `designation` | ⭕ | ≤160 chars. |
-| `organization` | ⭕ (recommended ✅) | ≤200 chars. |
-| `hearAboutUs` | ⭕ | ≤200 chars; consider constraining to an enum later. |
-| `programSlugs` | ✅ | Non-empty array; each must exist in `programs` and be `is_active`; de-duplicate; reject unknown slugs. |
-| `sourcePage` | ⭕ | ≤255; must be a relative path or same-site URL. |
-| `utm.*` | ⭕ | ≤120 each. |
-| `honeypot` | ✅ (must be empty) | If non-empty → silently accept-and-drop as spam (§10). |
+| Field          | Required            | Rules                                                                                                                 |
+| -------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `firstName`    | ✅                  | 2–120 chars; letters/spaces/`.-'` ; trim; strip control chars.                                                        |
+| `email`        | ✅                  | Valid RFC-5322 email; ≤255; lowercased; MX/deliverability optional.                                                   |
+| `phoneCountry` | ✅                  | Must be one of the supported ISO-2 codes (§ country list).                                                            |
+| `phoneNumber`  | ✅                  | 4–20 chars; digits/spaces/`-`/`(` `)`; strip formatting; optionally validate against dial code with `libphonenumber`. |
+| `country`      | ⭕ (recommended ✅) | ≤120 chars.                                                                                                           |
+| `designation`  | ⭕                  | ≤160 chars.                                                                                                           |
+| `organization` | ⭕ (recommended ✅) | ≤200 chars.                                                                                                           |
+| `hearAboutUs`  | ⭕                  | ≤200 chars; consider constraining to an enum later.                                                                   |
+| `programSlugs` | ✅                  | Non-empty array; each must exist in `programs` and be `is_active`; de-duplicate; reject unknown slugs.                |
+| `sourcePage`   | ⭕                  | ≤255; must be a relative path or same-site URL.                                                                       |
+| `utm.*`        | ⭕                  | ≤120 each.                                                                                                            |
+| `honeypot`     | ✅ (must be empty)  | If non-empty → silently accept-and-drop as spam (§10).                                                                |
 
 **Normalization:** trim all strings; collapse internal whitespace; store email lowercased; store phone number digits-normalized.
 **Note:** the client sends a `totalAmount` — **ignore it**; the server computes the total (§7).
@@ -354,17 +380,17 @@ Validate **server-side** regardless of client checks. Reject with `422` and per-
 
 ## 8. User Roles & Permissions
 
-| Capability | super_admin | admin | sales_agent | viewer |
-|---|:---:|:---:|:---:|:---:|
-| View registrations (list/detail) | ✅ | ✅ | ✅ (all or only assigned*) | ✅ |
-| Search / filter / export | ✅ | ✅ | ✅ | ✅ |
-| Change status | ✅ | ✅ | ✅ | ❌ |
-| Assign / reassign | ✅ | ✅ | ✅ (self-claim)* | ❌ |
-| Edit internal notes | ✅ | ✅ | ✅ | ❌ |
-| Flag/unflag spam | ✅ | ✅ | ❌ | ❌ |
-| Soft delete / restore | ✅ | ✅ (delete) / ❌ (restore) | ❌ | ❌ |
-| Manage programmes & prices | ✅ | ✅ | ❌ | ❌ |
-| Manage dashboard users | ✅ | ❌ | ❌ | ❌ |
+| Capability                       | super_admin |           admin            |         sales_agent         | viewer |
+| -------------------------------- | :---------: | :------------------------: | :-------------------------: | :----: |
+| View registrations (list/detail) |     ✅      |             ✅             | ✅ (all or only assigned\*) |   ✅   |
+| Search / filter / export         |     ✅      |             ✅             |             ✅              |   ✅   |
+| Change status                    |     ✅      |             ✅             |             ✅              |   ❌   |
+| Assign / reassign                |     ✅      |             ✅             |      ✅ (self-claim)\*      |   ❌   |
+| Edit internal notes              |     ✅      |             ✅             |             ✅              |   ❌   |
+| Flag/unflag spam                 |     ✅      |             ✅             |             ❌              |   ❌   |
+| Soft delete / restore            |     ✅      | ✅ (delete) / ❌ (restore) |             ❌              |   ❌   |
+| Manage programmes & prices       |     ✅      |             ✅             |             ❌              |   ❌   |
+| Manage dashboard users           |     ✅      |             ❌             |             ❌              |   ❌   |
 
 \* Decide policy: whether `sales_agent` sees all registrations or only those assigned to them (see Open Questions). Enforce authorization on **every** admin endpoint (never rely on the UI hiding actions).
 
@@ -425,7 +451,7 @@ cancelled / rejected / spam → (terminal; super_admin may reopen to 'new')
 - **Authorization:** enforce the §8 matrix on every endpoint server-side.
 - **Audit logging:** status changes (via history table); optionally log admin logins, exports, deletes.
 - **PII / compliance:** registrations contain personal data. Support: consent capture (see below), data-retention policy, right-to-erasure (hard-delete on request), access limited by role, encryption at rest for the DB.
-- **Consent:** add a privacy/consent checkbox to the form and store `consent_at` + policy version (recommended for GDPR/PDPA). *(Not in the current form — see Open Questions.)*
+- **Consent:** add a privacy/consent checkbox to the form and store `consent_at` + policy version (recommended for GDPR/PDPA). _(Not in the current form — see Open Questions.)_
 
 ---
 
@@ -433,12 +459,12 @@ cancelled / rejected / spam → (terminal; super_admin may reopen to 'new')
 
 Dispatched asynchronously (queue + worker) so API latency is unaffected.
 
-| Trigger | Recipient | Content |
-|---|---|---|
+| Trigger                  | Recipient                 | Content                                                                                                   |
+| ------------------------ | ------------------------- | --------------------------------------------------------------------------------------------------------- |
 | New registration (`new`) | Staff inbox / sales group | Reference no, name, email, phone, org, selected programmes, total, source page. Link to dashboard detail. |
-| New registration (`new`) | Applicant | Thank-you / confirmation with selected programmes + next steps. |
-| `confirmed` | Applicant | Confirmation + joining details. |
-| `invoiced` | Applicant | Invoice / payment link. |
+| New registration (`new`) | Applicant                 | Thank-you / confirmation with selected programmes + next steps.                                           |
+| `confirmed`              | Applicant                 | Confirmation + joining details.                                                                           |
+| `invoiced`               | Applicant                 | Invoice / payment link.                                                                                   |
 
 **Provider:** replace the site's current Web3Forms usage (contact form) with a transactional email service for these (e.g. Amazon SES, SendGrid, Resend, Postmark). Always persist to DB first, then email — email is a side effect, not the record of truth. Store delivery status if possible.
 
@@ -472,10 +498,23 @@ Suggested metrics for dashboard cards/charts:
 ```json
 {
   "totals": { "all": 342, "thisMonth": 58, "today": 6 },
-  "byStatus": { "new": 41, "contacted": 22, "confirmed": 15, "paid": 9, "enrolled": 30, "cancelled": 12 },
-  "byProgram": [ { "slug": "strategic-hr-business-partnership", "count": 88, "revenueCents": 33880000 } ],
+  "byStatus": {
+    "new": 41,
+    "contacted": 22,
+    "confirmed": 15,
+    "paid": 9,
+    "enrolled": 30,
+    "cancelled": 12
+  },
+  "byProgram": [
+    {
+      "slug": "strategic-hr-business-partnership",
+      "count": 88,
+      "revenueCents": 33880000
+    }
+  ],
   "revenueCents": 91250000,
-  "topSources": [ { "source": "LinkedIn", "count": 61 } ]
+  "topSources": [{ "source": "LinkedIn", "count": 61 }]
 }
 ```
 

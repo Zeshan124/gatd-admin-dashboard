@@ -18,7 +18,13 @@ const AUTH_ROUTES = ["/admin/login", "/admin/signup"];
 
 function AdminShell({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  // `trailingSlash: true` makes usePathname() return e.g. "/admin/login/";
+  // strip the trailing slash so exact-match route checks work.
+  const pathname =
+    rawPathname && rawPathname !== "/"
+      ? rawPathname.replace(/\/+$/, "")
+      : rawPathname;
   const router = useRouter();
   const { token, hydrated } = useAuth();
 

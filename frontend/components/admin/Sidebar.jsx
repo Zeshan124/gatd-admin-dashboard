@@ -8,6 +8,9 @@ import {
   Mail,
   FileDown,
   GraduationCap,
+  Layers,
+  BookOpen,
+  Newspaper,
   Users,
   Activity,
   X,
@@ -18,13 +21,22 @@ const NAV = [
   { label: "Registrations", href: "/admin/registrations", icon: ClipboardList },
   { label: "Messages", href: "/admin/messages", icon: Mail },
   { label: "Brochure Leads", href: "/admin/brochures", icon: FileDown },
-  // { label: "Programs", href: "/admin/programs", icon: GraduationCap },
+  { label: "Solutions", href: "/admin/solutions", icon: GraduationCap },
+  { label: "Programs", href: "/admin/programs", icon: Layers },
+  { label: "Subprograms", href: "/admin/subprograms", icon: BookOpen },
+  { label: "Blog", href: "/admin/blog", icon: Newspaper },
   // { label: "Users", href: "/admin/users", icon: Users },
   // { label: "Activity", href: "/admin/activity", icon: Activity },
 ];
 
 export default function Sidebar({ open, onClose }) {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  // `trailingSlash: true` yields paths like "/admin/registrations/"; normalize
+  // so the active-link exact match on "/admin" still works.
+  const pathname =
+    rawPathname && rawPathname !== "/"
+      ? rawPathname.replace(/\/+$/, "")
+      : rawPathname;
 
   return (
     <>

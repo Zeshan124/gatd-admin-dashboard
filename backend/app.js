@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const os = require("os");
+const path = require("path");
 
 require("./src/config/db"); // initialize the MySQL pool (logs connection status)
 
@@ -16,6 +17,9 @@ const parentSolutionsRoutes = require("./src/routes/parentSolutionsRoutes");
 const childSolutionsRoutes = require("./src/routes/childSolutionsRoutes");
 const solutionProgramsRoutes = require("./src/routes/solutionProgramsRoutes");
 const publicSolutionsRoutes = require("./src/routes/publicSolutionsRoutes");
+const uploadRoutes = require("./src/routes/uploadRoutes");
+const blogRoutes = require("./src/routes/blogRoutes");
+const publicBlogRoutes = require("./src/routes/publicBlogRoutes");
 const { sendError } = require("./src/utils/http");
 
 const app = express();
@@ -40,7 +44,7 @@ const corsOptions = {
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error("Not allowed by CORS"));
   },
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 };
 app.use(cors(corsOptions));
 
@@ -58,6 +62,27 @@ app.use((err, req, res, next) => {
   return next(err);
 });
 
+// --- AutoSSL / Let's Encrypt HTTP validation --------------------------------
+// This Node app answers every path, so without this the ACME challenge would
+// hit the 404 handler and AutoSSL could never issue a cert for the API domain.
+// Serve the challenge files written into the docroot's .well-known folder.
+app.use(
+  "/.well-known",
+  express.static(path.join(__dirname, ".well-known"), { dotfiles: "allow" })
+);
+
+// --- Static: uploaded assets (images/PDFs managed from the dashboard) --------
+// Files live in <app-root>/uploads (created by the upload controller) and are
+// served here so the public site can reference them by URL.
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    maxAge: "7d",
+    // Defense in depth: never let the browser MIME-sniff an uploaded file.
+    setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff"),
+  })
+);
+
 // --- Routes -----------------------------------------------------------------
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
@@ -73,6 +98,9 @@ app.use("/apis/admin/parent-solutions", parentSolutionsRoutes);
 app.use("/apis/admin/child-solutions", childSolutionsRoutes);
 app.use("/apis/admin/programs", solutionProgramsRoutes);
 app.use("/apis/public", publicSolutionsRoutes);
+app.use("/apis/public/blogs", publicBlogRoutes);
+app.use("/apis/admin/uploads", uploadRoutes);
+app.use("/apis/admin/blogs", blogRoutes);
 
 // 404 fallback
 app.use((req, res) => sendError(res, 404, "NOT_FOUND", "Resource not found"));

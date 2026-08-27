@@ -270,20 +270,34 @@ const solutionsMenu = [
   },
 ];
 
+// Simple (single-level) dropdown for the "Resources" menu. Only Blogs has a page
+// today; the rest are placeholders (#) until their pages exist.
+const resourcesMenu = [
+  { label: "Blogs", href: "/blog" },
+  { label: "Event", href: "#" },
+  { label: "News", href: "#" },
+  { label: "Gallery", href: "#" },
+  { label: "Press Release", href: "#" },
+  { label: "Media", href: "#" },
+];
+
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
   { label: "Solutions", href: "/solutions", hasDropdown: true },
   { label: "Services", href: "/services" },
+  { label: "Resources", href: "#", hasResources: true },
   { label: "Contact", href: "/contact" },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
+  const [mobileResourcesOpen, setMobileResourcesOpen] = useState(false);
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(null);
   const [mobileItemOpen, setMobileItemOpen] = useState(null);
 
@@ -419,6 +433,38 @@ export default function Navbar() {
                               </div>
                             )}
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : link.hasResources ? (
+                <div
+                  key={link.label}
+                  className="relative"
+                  onMouseEnter={() => setResourcesOpen(true)}
+                  onMouseLeave={() => setResourcesOpen(false)}
+                >
+                  <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-800 hover:text-[#D52029] transition-colors duration-200 rounded-md hover:bg-red-50">
+                    {link.label}
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${resourcesOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {resourcesOpen && (
+                    <div className="absolute top-full left-0 w-56 z-50 pt-1">
+                      <div className="bg-white rounded-xl shadow-xl border border-slate-100 py-2">
+                        {resourcesMenu.map((item) => (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            onClick={() => setResourcesOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:text-[#D52029] hover:bg-red-50 transition-colors group"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#D52029] shrink-0 transition-colors" />
+                            {item.label}
+                          </Link>
                         ))}
                       </div>
                     </div>
@@ -586,6 +632,33 @@ export default function Navbar() {
                               </div>
                             )}
                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : link.hasResources ? (
+                  <>
+                    <button
+                      onClick={() => setMobileResourcesOpen(!mobileResourcesOpen)}
+                      className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-slate-800 hover:text-[#D52029] hover:bg-red-50 rounded-xl transition-colors"
+                    >
+                      {link.label}
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${mobileResourcesOpen ? "rotate-180 text-[#D52029]" : ""}`}
+                      />
+                    </button>
+
+                    {mobileResourcesOpen && (
+                      <div className="ml-4 mt-1 border-l-2 border-red-100 pl-3 space-y-0.5">
+                        {resourcesMenu.map((item) => (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            onClick={() => setMobileOpen(false)}
+                            className="block px-3 py-2 text-sm text-slate-600 hover:text-[#D52029] hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            {item.label}
+                          </Link>
                         ))}
                       </div>
                     )}
