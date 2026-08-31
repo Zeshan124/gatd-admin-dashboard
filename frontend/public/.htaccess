@@ -8,4 +8,15 @@
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^blog/[^/]+/?$ /blog/__slug__/index.html [L]
+
+  # Solutions CMS — client-rendered fallbacks (same idea as the blog above).
+  # Subprogram pages: /solutions/<program>/<subprogram>/ (2 segments).
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^solutions/[^/]+/[^/]+/?$ /solutions/__slug__/__program__/index.html [L]
+
+  # Program pages: /solutions/<program>/ (1 segment).
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^solutions/[^/]+/?$ /solutions/__slug__/index.html [L]
 </IfModule>

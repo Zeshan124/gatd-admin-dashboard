@@ -90,7 +90,7 @@ export default function BlogArticle() {
 
   return (
     <main className="pt-28 pb-24">
-      <article className="mx-auto px-24">
+      <article className="mx-auto px-6 lg:px-24">
         <Link href="/blog/" className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-brand">
           <ArrowLeft className="h-4 w-4" /> All articles
         </Link>
@@ -99,7 +99,7 @@ export default function BlogArticle() {
           {post.category && (
             <span className="inline-block rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand">{post.category}</span>
           )}
-          <h1 className="mt-3 text-3xl font-black leading-tight text-slate-900 sm:text-4xl">{post.title}</h1>
+          <h1 className="mt-3 text-3xl font-bold text-[#414143] sm:text-4xl">{post.title}</h1>
           {post.excerpt && <p className="mt-4 text-lg text-slate-500">{post.excerpt}</p>}
 
           <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-slate-100 pb-6 text-sm text-slate-500">
@@ -126,7 +126,7 @@ export default function BlogArticle() {
         </header>
 
         {post.coverImage && (
-          <div className="mt-8 overflow-hidden rounded-2xl bg-slate-100">
+          <div className="mt-8 overflow-hidden rounded-2xl bg-slate-100 font-bold text-[#414143]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={post.coverImage} alt={post.title} className="w-full object-cover" />
           </div>
@@ -154,14 +154,14 @@ export default function BlogArticle() {
         }
         .blog-content h2 {
           font-size: 1.6rem;
-          font-weight: 800;
-          color: #0f172a;
+          font-weight: 700;
+          color: #414143;
           margin: 2rem 0 0.75rem;
         }
         .blog-content h3 {
           font-size: 1.3rem;
           font-weight: 700;
-          color: #0f172a;
+          color: #414143;
           margin: 1.75rem 0 0.5rem;
         }
         .blog-content p {
@@ -208,8 +208,20 @@ export default function BlogArticle() {
         .blog-content h4 {
           font-size: 1.1rem;
           font-weight: 700;
-          color: #0f172a;
+          color: #414143;
           margin: 1.5rem 0 0.5rem;
+        }
+        /* Editor-authored headings often carry inline colours (e.g. a pasted
+           span with color:rgb(0,0,0)). Force the brand ink on headings and any
+           nested spans/strong so all body headings render as #414143. */
+        .blog-content h1, .blog-content h1 *,
+        .blog-content h2, .blog-content h2 *,
+        .blog-content h3, .blog-content h3 *,
+        .blog-content h4, .blog-content h4 *,
+        .blog-content h5, .blog-content h5 *,
+        .blog-content h6, .blog-content h6 * {
+          color: #414143 !important;
+          font-weight: 700 !important;
         }
         .blog-content figure {
           margin: 1.5rem 0;

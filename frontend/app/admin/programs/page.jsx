@@ -539,9 +539,10 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
           value={gains}
           onChange={setGains}
           addLabel="Add gain"
+          labeledFields
           fields={[
             { key: "text", label: "Gain text", type: "textarea" },
-            { key: "iconSrc", label: "Icon URL/path (optional)" },
+            { key: "iconSrc", label: "Icon (optional)", type: "image" },
           ]}
         />
       </Section>

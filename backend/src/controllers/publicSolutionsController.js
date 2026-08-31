@@ -43,6 +43,64 @@ async function catalog(req, res) {
   }
 }
 
+// GET /apis/public/solutions/menu — full 3-level tree for the header dropdown:
+// parent_solutions → child_solutions (Programs) → solution_programs (Subprograms).
+// Minimal fields (slug/title/href) so the nav stays light.
+async function menu(req, res) {
+  try {
+    const parents = await query(
+      `SELECT id, slug, title FROM parent_solutions
+        WHERE is_active = 1 AND delete_status = 0 ORDER BY sort_order ASC, title ASC`
+    );
+    const children = await query(
+      `SELECT c.id, c.parent_solution_id, c.slug, c.title
+         FROM child_solutions c JOIN parent_solutions p ON p.id = c.parent_solution_id
+        WHERE c.is_active = 1 AND c.delete_status = 0 AND p.is_active = 1 AND p.delete_status = 0
+        ORDER BY c.sort_order ASC, c.title ASC`
+    );
+    const programs = await query(
+      `SELECT sp.child_solution_id, sp.slug, sp.title, c.slug AS child_slug
+         FROM solution_programs sp
+         JOIN child_solutions c ON c.id = sp.child_solution_id
+         JOIN parent_solutions p ON p.id = c.parent_solution_id
+        WHERE sp.is_published = 1 AND sp.is_active = 1 AND sp.delete_status = 0
+          AND c.is_active = 1 AND c.delete_status = 0
+          AND p.is_active = 1 AND p.delete_status = 0
+        ORDER BY sp.sort_order ASC, sp.title ASC`
+    );
+
+    const progsByChild = new Map();
+    for (const sp of programs) {
+      if (!progsByChild.has(sp.child_solution_id)) progsByChild.set(sp.child_solution_id, []);
+      progsByChild.get(sp.child_solution_id).push({
+        slug: sp.slug,
+        title: sp.title,
+        href: `/solutions/${sp.child_slug}/${sp.slug}`,
+      });
+    }
+    const childrenByParent = new Map();
+    for (const c of children) {
+      if (!childrenByParent.has(c.parent_solution_id)) childrenByParent.set(c.parent_solution_id, []);
+      childrenByParent.get(c.parent_solution_id).push({
+        slug: c.slug,
+        title: c.title,
+        href: `/solutions/${c.slug}`,
+        children: progsByChild.get(c.id) || [],
+      });
+    }
+    const data = parents.map((p) => ({
+      slug: p.slug,
+      title: p.title,
+      href: `/solutions`,
+      items: childrenByParent.get(p.id) || [],
+    }));
+    return res.json({ data });
+  } catch (err) {
+    console.error("[public] menu error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not load menu");
+  }
+}
+
 // GET /apis/public/solutions/:parentSlug — one parent + its active children
 async function parent(req, res) {
   try {
@@ -115,18 +173,20 @@ async function programsList(req, res) {
 async function program(req, res) {
   try {
     const rows = await query(
-      `SELECT sp.*, c.slug AS child_slug FROM solution_programs sp
+      `SELECT sp.*, c.slug AS child_slug, c.title AS child_title FROM solution_programs sp
          JOIN child_solutions c ON c.id = sp.child_solution_id
         WHERE sp.slug = ? AND sp.is_published = 1 AND sp.is_active = 1 AND sp.delete_status = 0
           AND c.is_active = 1 AND c.delete_status = 0 LIMIT 1`,
       [req.params.slug]
     );
     if (!rows[0]) return sendError(res, 404, "NOT_FOUND", "Program not found");
-    return res.json({ data: stripInternal(mapProgram(rows[0])) });
+    const data = stripInternal(mapProgram(rows[0]));
+    data.childSolutionTitle = rows[0].child_title; // for the breadcrumb
+    return res.json({ data });
   } catch (err) {
     console.error("[public] program error:", err);
     return sendError(res, 500, "SERVER_ERROR", "Could not load program");
   }
 }
 
-module.exports = { catalog, parent, child, programsList, program };
+module.exports = { catalog, menu, parent, child, programsList, program };

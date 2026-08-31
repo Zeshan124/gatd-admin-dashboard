@@ -623,23 +623,27 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
           value={focusAreas}
           onChange={setFocusAreas}
           addLabel="Add focus area"
+          itemLabel="Focus area"
+          labeledFields
           fields={[
-            { key: "title", label: "Title" },
-            { key: "description", label: "Description", type: "textarea" },
-            { key: "iconSrc", label: "Icon URL/path (optional)" },
+            { key: "title", label: "Title", placeholder: "e.g. Strategic HR Alignment" },
+            { key: "description", label: "Description", type: "textarea", placeholder: "Short description of this focus area" },
+            { key: "iconSrc", label: "Icon (optional)", type: "image" },
           ]}
         />
       </Section>
 
-      <Section title="FAQs">
+      <Section title="FAQs" description="Each item is one question and its answer, shown on the public page.">
         <ObjectListEditor
           label="FAQs"
           value={faqs}
           onChange={setFaqs}
           addLabel="Add FAQ"
+          itemLabel="FAQ"
+          labeledFields
           fields={[
-            { key: "question", label: "Question" },
-            { key: "answer", label: "Answer", type: "textarea" },
+            { key: "question", label: "Question", placeholder: "e.g. Who is this programme for?" },
+            { key: "answer", label: "Answer", type: "textarea", placeholder: "The answer visitors will see on the page" },
           ]}
         />
       </Section>

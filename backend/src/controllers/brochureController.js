@@ -271,4 +271,24 @@ async function exportLeads(req, res) {
   }
 }
 
-module.exports = { createLead, listLeads, getLead, updateLead, exportLeads, BROCHURE_STATUSES, SOURCE_TYPES };
+/**
+ * DELETE /apis/brochure-leads/:id   (admin, requires token)
+ * Soft-delete a lead (hidden from lists/exports; row retained).
+ */
+async function deleteLead(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return sendError(res, 400, "BAD_REQUEST", "Invalid id");
+    const result = await query(
+      `UPDATE brochure_leads SET delete_status = 1 WHERE id = ? AND delete_status = 0`,
+      [id]
+    );
+    if (result.affectedRows === 0) return sendError(res, 404, "NOT_FOUND", "Lead not found");
+    return res.json({ data: { id, deleted: true } });
+  } catch (err) {
+    console.error("[brochure] delete error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not delete lead");
+  }
+}
+
+module.exports = { createLead, listLeads, getLead, updateLead, deleteLead, exportLeads, BROCHURE_STATUSES, SOURCE_TYPES };

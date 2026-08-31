@@ -297,4 +297,24 @@ async function exportContact(req, res) {
   }
 }
 
-module.exports = { createContact, listContact, getContact, updateContact, exportContact, MESSAGE_STATUSES };
+/**
+ * DELETE /apis/contact/:id   (admin, requires token)
+ * Soft-delete a message (hidden from lists/exports; row retained).
+ */
+async function deleteContact(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return sendError(res, 400, "BAD_REQUEST", "Invalid id");
+    const result = await query(
+      `UPDATE contact_messages SET delete_status = 1 WHERE id = ? AND delete_status = 0`,
+      [id]
+    );
+    if (result.affectedRows === 0) return sendError(res, 404, "NOT_FOUND", "Message not found");
+    return res.json({ data: { id, deleted: true } });
+  } catch (err) {
+    console.error("[contact] delete error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not delete message");
+  }
+}
+
+module.exports = { createContact, listContact, getContact, updateContact, deleteContact, exportContact, MESSAGE_STATUSES };

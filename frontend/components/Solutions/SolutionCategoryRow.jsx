@@ -50,13 +50,15 @@ export default function SolutionCategoryRow({ title, items, clickable = false })
           const cardInner = (
             <>
               {/* Image */}
-              <div className="relative w-full overflow-hidden" style={{ height: "270px" }}>
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+              <div className="relative w-full overflow-hidden bg-slate-200" style={{ height: "270px" }}>
+                {item.image && (
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
 
                 {/* Rating badge */}
                 {item.rating != null && (

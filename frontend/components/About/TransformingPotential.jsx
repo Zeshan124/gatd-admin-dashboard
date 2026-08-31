@@ -2,17 +2,17 @@
 
 const stats = [
   {
-    number: "1932+",
+    number: "103+",
     label: "Companies Analyzed",
     description: "Helping organizations identify growth opportunities and improve performance.",
   },
   {
-    number: "21,921+",
+    number: "211+",
     label: "Strategies Planned",
     description: "Delivering impactful business and leadership strategies worldwide.",
   },
   {
-    number: "2501+",
+    number: "255",
     label: "Projects Released",
     description: "Successfully executing training and development initiatives across industries.",
   },

@@ -208,10 +208,13 @@ export function StringListEditor({ label, hint, value, onChange, placeholder }) 
 }
 
 /**
- * Editable list of objects. `fields` = [{ key, label, type?: "text"|"textarea" }].
+ * Editable list of objects. `fields` = [{ key, label, type?: "text"|"textarea", placeholder? }].
  * New rows are pre-seeded with empty strings for each field.
+ * - `labeledFields`: show each field's label above its input (stays visible after
+ *   typing, so you can always tell which box is which).
+ * - `itemLabel`: show a numbered header per row, e.g. "FAQ 1".
  */
-export function ObjectListEditor({ label, hint, value, onChange, fields, addLabel = "Add item" }) {
+export function ObjectListEditor({ label, hint, value, onChange, fields, addLabel = "Add item", itemLabel, labeledFields = false }) {
   const items = Array.isArray(value) ? value : [];
   const setField = (i, key, v) => onChange(items.map((x, idx) => (idx === i ? { ...x, [key]: v } : x)));
   const add = () => onChange([...items, Object.fromEntries(fields.map((f) => [f.key, ""]))]);
@@ -220,30 +223,54 @@ export function ObjectListEditor({ label, hint, value, onChange, fields, addLabe
     <Labeled label={label} hint={hint}>
       <div className="mt-1.5 space-y-3">
         {items.map((item, i) => (
-          <div key={i} className="rounded-lg border border-slate-200 p-3 space-y-2 bg-slate-50/50 relative">
+          <div key={i} className="rounded-lg border border-slate-200 p-3 space-y-2.5 bg-slate-50/50 relative">
             <button type="button" onClick={() => remove(i)} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-600" aria-label="Remove">
               <X className="w-4 h-4" />
             </button>
-            {fields.map((f) =>
-              f.type === "textarea" ? (
-                <textarea
-                  key={f.key}
-                  value={item?.[f.key] || ""}
-                  onChange={(e) => setField(i, f.key, e.target.value)}
-                  placeholder={f.label}
-                  rows={2}
-                  className={`${inputCls} resize-y pr-6`}
-                />
-              ) : (
-                <input
-                  key={f.key}
-                  value={item?.[f.key] || ""}
-                  onChange={(e) => setField(i, f.key, e.target.value)}
-                  placeholder={f.label}
-                  className={`${inputCls} pr-6`}
-                />
-              )
+            {itemLabel && (
+              <p className="text-xs font-bold uppercase tracking-wide text-brand pr-6">
+                {itemLabel} {i + 1}
+              </p>
             )}
+            {fields.map((f) => {
+              // Image/PDF fields get the full upload widget (upload OR paste a path).
+              if (f.type === "image" || f.type === "pdf") {
+                return (
+                  <MediaInput
+                    key={f.key}
+                    label={f.label}
+                    kind={f.type === "pdf" ? "pdf" : "image"}
+                    value={item?.[f.key] || null}
+                    onChange={(v) => setField(i, f.key, v)}
+                  />
+                );
+              }
+              const control =
+                f.type === "textarea" ? (
+                  <textarea
+                    value={item?.[f.key] || ""}
+                    onChange={(e) => setField(i, f.key, e.target.value)}
+                    placeholder={f.placeholder || f.label}
+                    rows={2}
+                    className={`${inputCls} resize-y pr-6`}
+                  />
+                ) : (
+                  <input
+                    value={item?.[f.key] || ""}
+                    onChange={(e) => setField(i, f.key, e.target.value)}
+                    placeholder={f.placeholder || f.label}
+                    className={`${inputCls} pr-6`}
+                  />
+                );
+              return labeledFields ? (
+                <label key={f.key} className="block">
+                  <span className="text-xs font-medium text-slate-500">{f.label}</span>
+                  <div className="mt-1">{control}</div>
+                </label>
+              ) : (
+                <div key={f.key}>{control}</div>
+              );
+            })}
           </div>
         ))}
         <button type="button" onClick={add} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-dark">

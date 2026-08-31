@@ -17,6 +17,7 @@ import {
   FileSpreadsheet,
   FileText,
   Calendar,
+  Trash2,
 } from "lucide-react";
 import { brochuresApi, API_BASE } from "@/lib/adminApi";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -57,6 +58,7 @@ export default function BrochuresPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [exporting, setExporting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -109,6 +111,23 @@ export default function BrochuresPage() {
     setSelected(null);
     setDetail(null);
     setDetailError("");
+  };
+
+  const deleteRecord = async () => {
+    const id = detail?.id ?? selected?.id;
+    if (!id) return;
+    setDeleting(true);
+    setDetailError("");
+    try {
+      await brochuresApi.remove(id);
+      setRows((rs) => rs.filter((r) => r.id !== id));
+      setMeta((m) => (m ? { ...m, total: Math.max(0, (m.total || 0) - 1) } : m));
+      closeDetail();
+    } catch (e) {
+      setDetailError(e.message);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const changeStatus = async (newStatus) => {
@@ -407,6 +426,8 @@ export default function BrochuresPage() {
           error={detailError}
           savingStatus={savingStatus}
           onChangeStatus={changeStatus}
+          onDelete={deleteRecord}
+          deleting={deleting}
           onClose={closeDetail}
         />
       )}
@@ -423,8 +444,9 @@ function Field({ label, value }) {
   );
 }
 
-function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeStatus, onClose }) {
+function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeStatus, onDelete, deleting, onClose }) {
   const d = detail || summary;
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -506,6 +528,27 @@ function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeS
               <Field label="Source page" value={d.sourcePage} />
             </>
           )}
+
+          {/* Delete */}
+          <div className="pt-2 border-t border-slate-100">
+            {confirmDelete ? (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                <p className="text-sm font-semibold text-red-700 mb-2">Delete this lead? It will be removed from the dashboard.</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-60">
+                    Cancel
+                  </button>
+                  <button onClick={onDelete} disabled={deleting} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-60">
+                    {deleting && <Loader2 className="w-4 h-4 animate-spin" />} Delete
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700">
+                <Trash2 className="w-4 h-4" /> Delete lead
+              </button>
+            )}
+          </div>
         </div>
       </aside>
 

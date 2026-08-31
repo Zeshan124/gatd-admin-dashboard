@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { createRegistration } = require("../controllers/registrationsController");
-const { listRegistrations, getRegistration, exportRegistrations, facetOptions, updateRegistrationStatus } = require("../controllers/registrationsAdminController");
+const { listRegistrations, getRegistration, exportRegistrations, facetOptions, updateRegistrationStatus, deleteRegistration } = require("../controllers/registrationsAdminController");
 const { registrationRateLimit } = require("../middleware/rateLimit");
 const { requireAdmin } = require("../middleware/auth");
 
@@ -14,5 +14,6 @@ router.get("/facets", requireAdmin, facetOptions);   // must precede "/:id"
 router.get("/export", requireAdmin, exportRegistrations); // must precede "/:id"
 router.get("/:id", requireAdmin, getRegistration);
 router.post("/:id/status", requireAdmin, updateRegistrationStatus); // change workflow status
+router.delete("/:id", requireAdmin, deleteRegistration); // soft-delete
 
 module.exports = router;

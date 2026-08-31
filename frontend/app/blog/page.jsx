@@ -14,15 +14,13 @@ function formatDate(iso) {
   }
 }
 
-function BlogCard({ post, featured }) {
+function BlogCard({ post }) {
   return (
     <Link
       href={`/blog/${post.slug}/`}
-      className={`group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-lg hover:-translate-y-0.5 ${
-        featured ? "md:col-span-2 md:flex-row" : ""
-      }`}
+      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-lg hover:-translate-y-0.5"
     >
-      <div className={`relative overflow-hidden bg-slate-100 ${featured ? "md:w-1/2 aspect-[16/10]" : "aspect-[16/10]"}`}>
+      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         {post.coverImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={post.coverImage} alt={post.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -36,8 +34,8 @@ function BlogCard({ post, featured }) {
         )}
       </div>
 
-      <div className={`flex flex-1 flex-col p-5 ${featured ? "md:justify-center md:p-8" : ""}`}>
-        <h3 className={`font-extrabold text-slate-800 group-hover:text-brand transition-colors ${featured ? "text-2xl" : "text-lg"}`}>
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="text-lg sm:text-xl font-bold leading-snug duration-300 group-hover:text-brand transition-colors">
           {post.title}
         </h3>
         {post.excerpt && <p className="mt-2 text-sm text-slate-500 line-clamp-3">{post.excerpt}</p>}
@@ -94,7 +92,7 @@ export default function BlogListingPage() {
       <section className="bg-gradient-to-b from-slate-50 to-white pt-28 pb-12">
         <div className="mx-auto max-w-6xl px-4 text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand">Insights</p>
-          <h1 className="mt-2 text-4xl font-black text-slate-900 sm:text-5xl">The GATD Blog</h1>
+          <h1 className="mt-2 text-4xl font-black text-[#414143] leading-[1.1] sm:text-5xl">The GATD Blog</h1>
           <p className="mx-auto mt-4 max-w-2xl text-slate-500">
             Ideas, frameworks and perspectives on HR, leadership and organisational development.
           </p>
@@ -124,8 +122,8 @@ export default function BlogListingPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {posts.map((post, i) => (
-                <BlogCard key={post.slug} post={post} featured={i === 0 && page === 1} />
+              {posts.map((post) => (
+                <BlogCard key={post.slug} post={post} />
               ))}
             </div>
 

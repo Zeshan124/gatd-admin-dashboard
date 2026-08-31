@@ -55,7 +55,7 @@ export default function WhatWillLearningDo() {
             the readable content of a page when looking at its layout.
           </p>
           <Link
-            href="/request-demo"
+             href="/contact"
             className="inline-flex items-center justify-center px-8 py-4 bg-[#D52029] hover:bg-red-700 text-white text-sm font-bold rounded-md transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             Request a Demo

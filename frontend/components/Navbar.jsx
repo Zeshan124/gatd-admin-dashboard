@@ -1,274 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
-
-const solutionsMenu = [
-  {
-    category: "Executive Educational Program",
-    items: [
-      {
-        label: "Singapore Potential Leadership Development Program",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Women in Leadership",
-       href: "#",
-        children: [],
-      },
-      {
-        label: "Next-Gen Strategic Leadership for CxOs",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Global CEO Executive Leadership Mastery Program",
-        href: "#",
-        children: [],
-      },
-    ],
-  },
-  {
-    category: "Consulting Service",
-    items: [
-      {
-        label: "Ministries Regional & International",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Talent Development & Succession Planning",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Strategic Workforce Planning and Development",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Balanced Scorecard & Performance Management",
-        href: "#",
-        children: [],
-      },
-    ],
-  },
-  {
-    category: "Customized Programs",
-    items: [
-      {
-        label: "Risk & Crisis Management Leadership",
-       href: "#",
-        children: [],
-      },
-      {
-        label: "Strategic Rightsizing",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Transformation Leadership in M&A",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Global Operations in Excellence (GOiE)",
-       href: "#",
-        children: [],
-      },
-    ],
-  },
-  {
-    category: "Certified Programs",
-    items: [
-      {
-        label: "Strategic Human Resources, Business Leadership",
-        href: "/solutions/strategic-hr",
-        children: [
-          {
-            label: "Strategic HR Business Partnership & Beyond",
-            href: "/solutions/strategic-hr/strategic-hr-business-partnership",
-          },
-          {
-            label: "Impactful Business and People Leadership",
-            href: "/solutions/strategic-hr/business-people-leadership",
-          },
-          {
-            label: "Performance Development and Rewards Management",
-            href: "/solutions/strategic-hr/performance-rewards",
-          },
-          {
-            label: "Resourcing, Talent and Learning Management",
-            href: "/solutions/strategic-hr/resourcing-talent-learning",
-          },
-          // { label: "HR Analytics and Digital Transformation", href: "/solutions/strategic-hr/hr-analytics" },
-          // { label: "Employment Law and Compliance", href: "/solutions/strategic-hr/employment-law" },
-          // { label: "Organisational Design and Change", href: "/solutions/strategic-hr/org-design-change" },
-          // { label: "Executive Compensation and Benefits Strategy", href: "/solutions/strategic-hr/compensation-benefits" },
-          {
-            label: "Impactive HR for the Uninitiated",
-            href: "/solutions/strategic-hr/impactive-hr",
-          },
-          {
-            label: "Progressing Organization Development",
-            href: "/solutions/strategic-hr/progressing-org-development",
-          },
-          {
-            label: "Advancing Trainer Development (ToT)",
-            href: "/solutions/strategic-hr/advancing-trainer-development",
-          },
-          {
-            label: "Management: Best Practices for Best Results",
-            href: "/solutions/strategic-hr/management-best-practices",
-          },
-        ],
-      },
-      {
-        label: "Change Management",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Public Private Partnerships",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Key Performance Indicators (KPIs)",
-        href: "#",
-        children: [],
-      },
-    ],
-  },
-  {
-    category: "Executive Retreats",
-    items: [
-      {
-        label: "Strategic Reset Retreat",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "The Great Gatsby Gala",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "The All-Star Carnival",
-        href: "#",
-        children: [],
-      },
-    ],
-  },
-  {
-    category: "Incubators — Regional & International",
-    items: [
-      {
-        label: "Global HealthTech",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Net Zero Innovation Lab",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "GovTech Catalyst Hub",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "EdTech Skills",
-        href: "#",
-        children: [],
-      },
-    ],
-  },
-  {
-    category: "Event Management",
-    items: [
-      {
-        label: "Program Management",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "CSR Events",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Product Launches & Brand Activation",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Trade Shows and Expo Management",
-        href: "#",
-        children: [],
-      },
-    ],
-  },
-  {
-    category: "Global Conferences",
-    items: [
-      {
-        label: "Global Marketing Forum",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Energy Governance & Leadership Summit",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "The Zero Summit",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "PetroForesight 2030",
-        href: "#",
-        children: [],
-      },
-    ],
-  },
-  {
-    category: "Industry Specific",
-    items: [
-      {
-        label: "Advanced Program in Financial Strategy",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Innovation Design into Action",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Global Marketing & Sales Leadership",
-        href: "#",
-        children: [],
-      },
-      {
-        label: "Strategic Leadership Across Healthcare",
-        href: "#",
-        children: [
-          // { label: "Healthcare Strategy & System Leadership", href: "/solutions/healthcare-leadership" },
-          // { label: "Clinical Excellence & Quality Improvement", href: "/solutions/healthcare-leadership" },
-          // { label: "Healthcare Finance & Resource Management", href: "/solutions/healthcare-leadership" },
-          // { label: "Digital Health & Innovation Leadership", href: "/solutions/healthcare-leadership" },
-        ],
-      },
-    ],
-  },
-];
+import { publicSolutionsApi } from "@/lib/publicApi";
 
 // Simple (single-level) dropdown for the "Resources" menu. Only Blogs has a page
 // today; the rest are placeholders (#) until their pages exist.
@@ -300,6 +36,33 @@ export default function Navbar() {
   const [mobileResourcesOpen, setMobileResourcesOpen] = useState(false);
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(null);
   const [mobileItemOpen, setMobileItemOpen] = useState(null);
+
+  // Live Solutions → Programs → Subprograms tree from the CMS (fetched at runtime
+  // so newly-created content appears without rebuilding the static site).
+  const [solutionsTree, setSolutionsTree] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    publicSolutionsApi
+      .menu()
+      .then((res) => {
+        if (alive) setSolutionsTree(Array.isArray(res?.data) ? res.data : []);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Normalize the API tree (slug/title/href) to the shape the dropdown markup
+  // expects (category/label). Solution → Program → Subprogram.
+  const solutionsMenu = solutionsTree.map((p) => ({
+    category: p.title,
+    items: (p.items || []).map((c) => ({
+      label: c.title,
+      href: c.href,
+      children: (c.children || []).map((s) => ({ label: s.title, href: s.href })),
+    })),
+  }));
 
   const closeAll = () => {
     setDropdownOpen(false);
@@ -354,6 +117,12 @@ export default function Navbar() {
                           </Link>
                         </div>
 
+                        {solutionsMenu.length === 0 && (
+                          <div className="px-4 py-2.5 text-sm text-slate-400">
+                            Loading…
+                          </div>
+                        )}
+
                         {solutionsMenu.map((group) => (
                           <div
                             key={group.category}
@@ -369,11 +138,13 @@ export default function Navbar() {
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#D52029] transition-colors shrink-0" />
                                 {group.category}
                               </span>
-                              <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-[#D52029]" />
+                              {group.items.length > 0 && (
+                                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-[#D52029]" />
+                              )}
                             </div>
 
                             {/* Level 2 — Items flyout */}
-                            {hoveredCategory === group.category && (
+                            {hoveredCategory === group.category && group.items.length > 0 && (
                               <div className="absolute left-full top-0 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
                                 {group.items.map((item) => (
                                   <div
@@ -556,6 +327,9 @@ export default function Navbar() {
                         >
                           View All Solutions →
                         </Link>
+                        {solutionsMenu.length === 0 && (
+                          <p className="px-3 py-2 text-xs text-slate-400">Loading…</p>
+                        )}
                         {solutionsMenu.map((group) => (
                           <div key={group.category}>
                             {/* Category */}
@@ -573,9 +347,11 @@ export default function Navbar() {
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#D52029] transition-colors shrink-0" />
                                 {group.category}
                               </span>
-                              <ChevronDown
-                                className={`w-3 h-3 transition-transform ${mobileCategoryOpen === group.category ? "rotate-180 text-[#D52029]" : ""}`}
-                              />
+                              {group.items.length > 0 && (
+                                <ChevronDown
+                                  className={`w-3 h-3 transition-transform ${mobileCategoryOpen === group.category ? "rotate-180 text-[#D52029]" : ""}`}
+                                />
+                              )}
                             </button>
 
                             {mobileCategoryOpen === group.category && (
@@ -584,23 +360,30 @@ export default function Navbar() {
                                   <div key={item.label}>
                                     {item.children?.length > 0 ? (
                                       <>
-                                        <button
-                                          onClick={() =>
-                                            setMobileItemOpen(
-                                              mobileItemOpen === item.label
-                                                ? null
-                                                : item.label,
-                                            )
-                                          }
-                                          className="flex items-center justify-between w-full px-3 py-2 text-xs text-slate-500 hover:text-[#D52029] hover:bg-red-50 rounded-lg transition-colors group"
-                                        >
-                                          <span className="text-left leading-snug">
+                                        <div className="flex items-center">
+                                          <Link
+                                            href={item.href}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="flex-1 px-3 py-2 text-xs text-slate-500 hover:text-[#D52029] hover:bg-red-50 rounded-lg transition-colors leading-snug"
+                                          >
                                             {item.label}
-                                          </span>
-                                          <ChevronDown
-                                            className={`w-3 h-3 shrink-0 ml-2 transition-transform ${mobileItemOpen === item.label ? "rotate-180 text-[#D52029]" : ""}`}
-                                          />
-                                        </button>
+                                          </Link>
+                                          <button
+                                            onClick={() =>
+                                              setMobileItemOpen(
+                                                mobileItemOpen === item.label
+                                                  ? null
+                                                  : item.label,
+                                              )
+                                            }
+                                            aria-label="Toggle subprograms"
+                                            className="p-2 text-slate-400 hover:text-[#D52029]"
+                                          >
+                                            <ChevronDown
+                                              className={`w-3 h-3 transition-transform ${mobileItemOpen === item.label ? "rotate-180 text-[#D52029]" : ""}`}
+                                            />
+                                          </button>
+                                        </div>
                                         {mobileItemOpen === item.label && (
                                           <div className="ml-4 pl-3 border-l-2 border-red-50 space-y-0.5 mb-1">
                                             {item.children.map((child, ci) => (

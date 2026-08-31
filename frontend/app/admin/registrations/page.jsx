@@ -15,6 +15,7 @@ import {
   FileSpreadsheet,
   FileText,
   Calendar,
+  Trash2,
 } from "lucide-react";
 import { registrationsApi, API_BASE } from "@/lib/adminApi";
 import { formatMoney, formatDate, formatDateTime } from "@/lib/format";
@@ -47,6 +48,7 @@ export default function RegistrationsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [exporting, setExporting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -118,6 +120,23 @@ export default function RegistrationsPage() {
     setSelected(null);
     setDetail(null);
     setDetailError("");
+  };
+
+  const deleteRecord = async () => {
+    const id = detail?.id ?? selected?.id;
+    if (!id) return;
+    setDeleting(true);
+    setDetailError("");
+    try {
+      await registrationsApi.remove(id);
+      setRows((rs) => rs.filter((r) => r.id !== id));
+      setMeta((m) => (m ? { ...m, total: Math.max(0, (m.total || 0) - 1) } : m));
+      closeDetail();
+    } catch (e) {
+      setDetailError(e.message);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const changeStatus = async (newStatus) => {
@@ -236,8 +255,8 @@ export default function RegistrationsPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-lg px-3 py-2 flex-1 min-w-56 focus-within:border-brand transition-colors">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+        <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-lg px-3 py-2 w-full sm:flex-1 sm:min-w-56 focus-within:border-brand transition-colors">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             value={searchInput}
@@ -257,7 +276,7 @@ export default function RegistrationsPage() {
             setSolution(e.target.value);
             setPage(1);
           }}
-          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors max-w-56"
+          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors w-full sm:w-auto sm:max-w-56"
         >
           <option value="">All solutions</option>
           {facets.solutions.map((s) => (
@@ -272,7 +291,7 @@ export default function RegistrationsPage() {
             setProgram(e.target.value);
             setPage(1);
           }}
-          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors max-w-64"
+          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors w-full sm:w-auto sm:max-w-64"
         >
           <option value="">All programmes</option>
           {facets.programs.map((p) => (
@@ -287,7 +306,7 @@ export default function RegistrationsPage() {
             setStatus(e.target.value);
             setPage(1);
           }}
-          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors"
+          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors w-full sm:w-auto"
         >
           <option value="">All statuses</option>
           {REGISTRATION_STATUSES.map((s) => (
@@ -298,7 +317,7 @@ export default function RegistrationsPage() {
         </select>
 
         {/* Date range */}
-        <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-lg px-3 py-2 focus-within:border-brand transition-colors">
+        <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-lg px-3 py-2 w-full sm:w-auto focus-within:border-brand transition-colors">
           <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="date"
@@ -309,7 +328,7 @@ export default function RegistrationsPage() {
               setPage(1);
             }}
             aria-label="From date"
-            className="bg-transparent outline-none text-sm text-slate-700 w-36"
+            className="bg-transparent outline-none text-sm text-slate-700 flex-1 min-w-0 sm:flex-none sm:w-36"
           />
           <span className="text-slate-400 text-sm">–</span>
           <input
@@ -321,7 +340,7 @@ export default function RegistrationsPage() {
               setPage(1);
             }}
             aria-label="To date"
-            className="bg-transparent outline-none text-sm text-slate-700 w-36"
+            className="bg-transparent outline-none text-sm text-slate-700 flex-1 min-w-0 sm:flex-none sm:w-36"
           />
           {(dateFrom || dateTo) && (
             <button
@@ -377,7 +396,46 @@ export default function RegistrationsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Mobile / tablet: card list */}
+            <div className="lg:hidden divide-y divide-slate-100">
+              {rows.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => openDetail(r)}
+                  className="w-full text-left px-4 py-3.5 hover:bg-brand-50/60 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-800 truncate">
+                        {r.firstName} {r.lastName || ""}
+                      </p>
+                      <p className="text-xs text-slate-400 truncate">{r.email}</p>
+                    </div>
+                    <StatusBadge status={r.status} />
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                    <span className="font-mono text-slate-400">{r.referenceNo}</span>
+                    {r.organization && <span className="truncate">· {r.organization}</span>}
+                    <span>· {formatDate(r.createdAt)}</span>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between gap-2">
+                    <span className="text-xs text-slate-600 truncate">
+                      {r.programs?.length
+                        ? `${r.programs[0].title}${r.programs.length > 1 ? ` +${r.programs.length - 1}` : ""}`
+                        : "—"}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-700 whitespace-nowrap">
+                      {formatMoney(r.totalAmountCents, r.currency)}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Large screens: full table */}
+            <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-100 bg-slate-50/50">
@@ -445,11 +503,12 @@ export default function RegistrationsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Pagination */}
         {!error && !loading && rows.length > 0 && (
-          <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3.5 border-t border-slate-100">
             <p className="text-xs text-slate-500">
               Showing <span className="font-semibold">{from}</span>–
               <span className="font-semibold">{to}</span> of{" "}
@@ -487,6 +546,8 @@ export default function RegistrationsPage() {
           error={detailError}
           savingStatus={savingStatus}
           onChangeStatus={changeStatus}
+          onDelete={deleteRecord}
+          deleting={deleting}
           onClose={closeDetail}
         />
       )}
@@ -510,9 +571,12 @@ function DetailDrawer({
   error,
   savingStatus,
   onChangeStatus,
+  onDelete,
+  deleting,
   onClose,
 }) {
   const d = detail || summary;
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const phone =
     d.phoneNumber || d.phone
       ? `${d.phoneDialCode || ""} ${d.phoneNumber || d.phone || ""}`.trim()
@@ -627,6 +691,27 @@ function DetailDrawer({
               )}
             </>
           )}
+
+          {/* Delete */}
+          <div className="pt-2 border-t border-slate-100">
+            {confirmDelete ? (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                <p className="text-sm font-semibold text-red-700 mb-2">Delete this registration? It will be removed from the dashboard.</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-60">
+                    Cancel
+                  </button>
+                  <button onClick={onDelete} disabled={deleting} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-60">
+                    {deleting && <Loader2 className="w-4 h-4 animate-spin" />} Delete
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700">
+                <Trash2 className="w-4 h-4" /> Delete registration
+              </button>
+            )}
+          </div>
         </div>
       </aside>
 

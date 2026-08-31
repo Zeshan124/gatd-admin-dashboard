@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createLead, listLeads, getLead, updateLead, exportLeads } = require("../controllers/brochureController");
+const { createLead, listLeads, getLead, updateLead, deleteLead, exportLeads } = require("../controllers/brochureController");
 const { brochureRateLimit } = require("../middleware/rateLimit");
 const { requireAdmin } = require("../middleware/auth");
 
@@ -12,5 +12,6 @@ router.get("/", requireAdmin, listLeads);
 router.get("/export", requireAdmin, exportLeads); // must precede "/:id"
 router.get("/:id", requireAdmin, getLead);
 router.patch("/:id", requireAdmin, updateLead);
+router.delete("/:id", requireAdmin, deleteLead);
 
 module.exports = router;

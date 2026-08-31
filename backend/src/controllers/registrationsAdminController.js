@@ -408,4 +408,24 @@ async function facetOptions(req, res) {
   }
 }
 
-module.exports = { listRegistrations, getRegistration, exportRegistrations, facetOptions, updateRegistrationStatus };
+/**
+ * DELETE /apis/registrations/:id   (admin, requires token)
+ * Soft-delete a registration (hidden from lists/exports; row + line items retained).
+ */
+async function deleteRegistration(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return sendError(res, 400, "BAD_REQUEST", "Invalid id");
+    const result = await query(
+      `UPDATE registrations SET delete_status = 1 WHERE id = ? AND delete_status = 0`,
+      [id]
+    );
+    if (result.affectedRows === 0) return sendError(res, 404, "NOT_FOUND", "Registration not found");
+    return res.json({ data: { id, deleted: true } });
+  } catch (err) {
+    console.error("[registrations] delete error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not delete registration");
+  }
+}
+
+module.exports = { listRegistrations, getRegistration, exportRegistrations, facetOptions, updateRegistrationStatus, deleteRegistration };

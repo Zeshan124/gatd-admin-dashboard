@@ -152,6 +152,8 @@ export const contactApi = {
   /** Update status (new | read | replied | archived) → { data: {...} } */
   updateStatus: (id, status) =>
     request(`/contact/${id}`, { method: "PATCH", body: { status } }),
+  /** Soft-delete a message */
+  remove: (id) => request(`/contact/${id}`, { method: "DELETE" }),
   /**
    * Download the export honoring the same filters as the list. Default → .xlsx;
    * pass { format: "csv" } for CSV. Fetched as a blob so the bearer token can go
@@ -209,6 +211,8 @@ export const brochuresApi = {
   /** Update status (new | contacted | archived) → { data: {...} } */
   updateStatus: (id, status) =>
     request(`/brochure-leads/${id}`, { method: "PATCH", body: { status } }),
+  /** Soft-delete a lead */
+  remove: (id) => request(`/brochure-leads/${id}`, { method: "DELETE" }),
   /** Download export (xlsx default, { format: "csv" }) → { blob, filename } */
   exportFile: async (params = {}) => {
     const url = `${API_BASE}/brochure-leads/export${toQuery(params)}`;

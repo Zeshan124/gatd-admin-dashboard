@@ -11,8 +11,9 @@ import {
   ArrowRight,
   AlertTriangle,
   TrendingUp,
+  Newspaper,
 } from "lucide-react";
-import { statsApi, registrationsApi } from "@/lib/adminApi";
+import { statsApi, registrationsApi, blogsApi } from "@/lib/adminApi";
 import { formatMoney, formatDate } from "@/lib/format";
 import StatCard from "@/components/admin/StatCard";
 import StatusBadge, { REGISTRATION_STATUSES } from "@/components/admin/StatusBadge";
@@ -49,6 +50,11 @@ export default function AdminOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Blog activity — fetched separately so a blog-API hiccup never blanks the dashboard.
+  const [blog, setBlog] = useState(null);
+  const [blogLoading, setBlogLoading] = useState(true);
+  const [blogError, setBlogError] = useState("");
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -66,9 +72,34 @@ export default function AdminOverview() {
     }
   }, []);
 
+  const loadBlog = useCallback(async () => {
+    setBlogLoading(true);
+    setBlogError("");
+    try {
+      const [allRes, pubRes] = await Promise.all([
+        blogsApi.list({ page: 1, pageSize: 5, sort: "-published_at" }),
+        blogsApi.list({ isPublished: "true", page: 1, pageSize: 1 }),
+      ]);
+      const total = allRes?.meta?.total ?? (allRes?.data?.length || 0);
+      const published = pubRes?.meta?.total ?? 0;
+      setBlog({
+        total,
+        published,
+        drafts: Math.max(0, total - published),
+        latest: allRes?.data || [],
+      });
+    } catch (e) {
+      setBlogError(e.message || "Could not load blog data");
+      setBlog(null);
+    } finally {
+      setBlogLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadBlog();
+  }, [load, loadBlog]);
 
   const totals = stats?.totals || {};
   const reg = stats?.registrations || {};
@@ -99,10 +130,13 @@ export default function AdminOverview() {
           <p className="text-sm text-slate-500 mt-1">Registrations, enquiries and brochure leads at a glance.</p>
         </div>
         <button
-          onClick={load}
+          onClick={() => {
+            load();
+            loadBlog();
+          }}
           className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-4 h-4 ${loading || blogLoading ? "animate-spin" : ""}`} />
           Refresh
         </button>
       </div>
@@ -242,6 +276,72 @@ export default function AdminOverview() {
               </table>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Blog activity */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <h3 className="text-sm font-bold text-slate-700 inline-flex items-center gap-2">
+            <Newspaper className="w-4 h-4 text-slate-400" />
+            Blog activity
+          </h3>
+          <Link
+            href="/admin/blog"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-brand hover:text-brand-dark"
+          >
+            Manage blog <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        <div className="p-5">
+          {/* Counters */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+              <p className="text-xs text-slate-500">Total posts</p>
+              <p className="text-2xl font-extrabold text-slate-800 mt-0.5">{blogLoading ? "…" : blog?.total ?? "—"}</p>
+            </div>
+            <div className="rounded-xl bg-green-50 border border-green-100 px-4 py-3">
+              <p className="text-xs text-green-700">Published</p>
+              <p className="text-2xl font-extrabold text-green-700 mt-0.5">{blogLoading ? "…" : blog?.published ?? "—"}</p>
+            </div>
+            <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
+              <p className="text-xs text-amber-700">Drafts</p>
+              <p className="text-2xl font-extrabold text-amber-700 mt-0.5">{blogLoading ? "…" : blog?.drafts ?? "—"}</p>
+            </div>
+          </div>
+
+          {/* Latest posts */}
+          <div className="mt-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Latest posts</p>
+            {blogLoading ? (
+              <p className="text-sm text-slate-400">Loading…</p>
+            ) : blogError ? (
+              <p className="text-sm text-amber-700">Couldn&apos;t load blog data.</p>
+            ) : !blog || blog.latest.length === 0 ? (
+              <p className="text-sm text-slate-400">No posts yet.</p>
+            ) : (
+              <ul className="divide-y divide-slate-50">
+                {blog.latest.map((p) => (
+                  <li key={p.slug} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-800 truncate">{p.title}</p>
+                      <p className="text-xs text-slate-400">
+                        {p.publishedAt ? formatDate(p.publishedAt) : "Not published"}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset shrink-0 ${
+                        p.isPublished ? "bg-green-50 text-green-700 ring-green-200" : "bg-amber-50 text-amber-700 ring-amber-200"
+                      }`}
+                    >
+                      {p.isPublished ? "Published" : "Draft"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </div>

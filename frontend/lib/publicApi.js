@@ -40,3 +40,18 @@ export const publicBlogsApi = {
   /** { data: [slug, ...] } */
   slugs: () => pub("/public/blogs/slugs"),
 };
+
+// Solutions CMS (public read). Level map: Solution = parent, Program = child
+// solution, Subprogram = program. See docs/solutions-and-programs-backend.md.
+export const publicSolutionsApi = {
+  /** Header dropdown tree → { data: [{ slug, title, href, items:[{ slug,title,href, children:[{slug,title,href}] }] }] } */
+  menu: () => pub("/public/solutions/menu"),
+  /** Landing catalog → { data: [{ slug, title, description, children:[...] }] } */
+  catalog: () => pub("/public/solutions"),
+  /** One Program (child solution) + its Subprograms → { data: {...} } */
+  child: (slug) => pub(`/public/child-solutions/${encodeURIComponent(slug)}`),
+  /** One Subprogram (program) full detail → { data: {...} } */
+  program: (slug) => pub(`/public/programs/${encodeURIComponent(slug)}`),
+  /** All published Subprogram slugs → { data: [{ slug, title, childSolutionSlug }] } */
+  programSlugs: () => pub("/public/programs"),
+};
