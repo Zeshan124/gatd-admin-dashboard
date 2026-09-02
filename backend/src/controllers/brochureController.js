@@ -1,6 +1,7 @@
 const ExcelJS = require("exceljs");
 const { query } = require("../config/db");
 const { sendError } = require("../utils/http");
+const { sendBrochureEmails } = require("../utils/brochureEmails");
 
 const EXPORT_MAX_ROWS = 100000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -84,6 +85,12 @@ async function createLead(req, res) {
         value.name, value.email, value.country, value.organization,
         value.sourcePage, ip, userAgent,
       ]
+    );
+
+    // Fire-and-forget: confirm to the visitor + notify brochure@globalatd.com.
+    // Never blocks or fails the request (sendBrochureEmails swallows all errors).
+    sendBrochureEmails({ value }).catch((e) =>
+      console.error("[brochure] email error:", e && e.message)
     );
 
     return res.status(201).json({ data: { id: result.insertId, received: true } });
