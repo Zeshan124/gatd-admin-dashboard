@@ -5,7 +5,7 @@ const { sendError } = require("../utils/http");
 const EXPORT_MAX_ROWS = 100000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_RE = /^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u;
-const SOURCE_TYPES = ["solution", "program"];
+const SOURCE_TYPES = ["solution", "program", "company_profile"];
 const BROCHURE_STATUSES = ["new", "contacted", "archived"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 

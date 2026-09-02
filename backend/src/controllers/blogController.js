@@ -35,6 +35,7 @@ function mapBlog(r) {
     category: r.category,
     tags: parseJson(r.tags),
     readMinutes: r.read_minutes,
+    views: r.views,
     metaTitle: r.meta_title,
     metaDescription: r.meta_description,
     isFeatured: !!r.is_featured,
@@ -58,6 +59,7 @@ function mapBlogCard(r) {
     category: r.category,
     tags: parseJson(r.tags),
     readMinutes: r.read_minutes,
+    views: r.views,
     isFeatured: !!r.is_featured,
     publishedAt: r.published_at,
   };
@@ -102,6 +104,14 @@ function collectColumns(body, { partial }) {
       const n = parseInt(body.readMinutes, 10);
       if (Number.isNaN(n) || n < 0) fields.readMinutes = "readMinutes must be an integer ≥ 0";
       else cols.read_minutes = n;
+    }
+  }
+  if (body.views !== undefined) {
+    if (body.views === null || body.views === "") cols.views = 0;
+    else {
+      const n = parseInt(body.views, 10);
+      if (Number.isNaN(n) || n < 0) fields.views = "views must be an integer ≥ 0";
+      else cols.views = n;
     }
   }
   if (body.isFeatured !== undefined) cols.is_featured = body.isFeatured ? 1 : 0;
@@ -305,7 +315,7 @@ async function listPublic(req, res) {
     const total = countRows[0].total;
 
     const rows = await query(
-      `SELECT slug, title, excerpt, cover_image, author_name, author_image, category, tags, read_minutes, is_featured, published_at
+      `SELECT slug, title, excerpt, cover_image, author_name, author_image, category, tags, read_minutes, views, is_featured, published_at
          FROM blogs ${where}
         ORDER BY published_at DESC, created_at DESC, id DESC
         LIMIT ? OFFSET ?`,

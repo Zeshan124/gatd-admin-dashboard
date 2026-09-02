@@ -31,7 +31,8 @@ export default function SolutionsCatalog() {
               id: c.slug || i,
               title: c.title,
               image: c.cardImage,
-              href: `/solutions/${c.slug}`,
+              // Admin-controlled: href is null when the program isn't clickable.
+              href: c.href,
               rating: c.rating,
               reviews: c.reviews,
             })),
@@ -115,7 +116,7 @@ export default function SolutionsCatalog() {
 
             {/* Category rows */}
             {displayed.map((category) => (
-              <SolutionCategoryRow key={category.id} title={category.title} items={category.items} clickable />
+              <SolutionCategoryRow key={category.id} title={category.title} items={category.items} />
             ))}
 
             {/* Load More */}

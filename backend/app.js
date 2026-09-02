@@ -12,6 +12,7 @@ const programsRoutes = require("./src/routes/programsRoutes");
 const authRoutes = require("./src/routes/authRoutes");
 const contactRoutes = require("./src/routes/contactRoutes");
 const brochureRoutes = require("./src/routes/brochureRoutes");
+const companyProfileRoutes = require("./src/routes/companyProfileRoutes");
 const statsRoutes = require("./src/routes/statsRoutes");
 const parentSolutionsRoutes = require("./src/routes/parentSolutionsRoutes");
 const childSolutionsRoutes = require("./src/routes/childSolutionsRoutes");
@@ -78,8 +79,14 @@ app.use(
   "/uploads",
   express.static(path.join(__dirname, "uploads"), {
     maxAge: "7d",
-    // Defense in depth: never let the browser MIME-sniff an uploaded file.
-    setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff"),
+    setHeaders: (res) => {
+      // Defense in depth: never MIME-sniff an uploaded file, and neutralize any
+      // <script> inside an uploaded SVG if it's opened directly as a document
+      // (the `sandbox` directive blocks script execution). Icons loaded via <img>
+      // are unaffected.
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    },
   })
 );
 
@@ -91,6 +98,8 @@ app.use("/apis/registrations", registrationsRoutes);
 app.use("/apis/programs", programsRoutes);
 app.use("/apis/contact", contactRoutes);
 app.use("/apis/brochure-leads", brochureRoutes);
+app.use("/apis/public/company-profile", companyProfileRoutes.publicRouter);
+app.use("/apis/admin/company-profile", companyProfileRoutes.adminRouter);
 app.use("/apis/stats", statsRoutes);
 
 // Solutions & Programs content module

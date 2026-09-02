@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Loader2, Inbox, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Inbox, AlertTriangle, Eye } from "lucide-react";
 import { publicBlogsApi } from "@/lib/publicApi";
 
 const LATEST_COUNT = 6;
@@ -141,6 +141,12 @@ export default function LatestUpdates() {
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-slate-300 font-bold">GATD</div>
+                  )}
+                  {post.views != null && (
+                    <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm backdrop-blur-sm">
+                      <Eye className="h-3.5 w-3.5 text-slate-500" />
+                      {Number(post.views).toLocaleString()}
+                    </span>
                   )}
                 </div>
 

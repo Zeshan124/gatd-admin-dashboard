@@ -19,6 +19,10 @@ const STRING_FIELDS = [
   ["gains_heading", "gainsHeading"], ["focus_heading", "focusHeading"],
 ];
 
+// A link target is safe only if it's a same-site relative path (/…, not //) or an
+// http(s) absolute URL — this blocks javascript:/data:/vbscript: XSS in the href.
+const SAFE_LINK_RE = /^(https?:\/\/|\/(?!\/))/i;
+
 function mapProgram(r) {
   return {
     id: r.id,
@@ -41,6 +45,8 @@ function mapProgram(r) {
     pricingHeading: r.pricing_heading,
     pricingDescription: r.pricing_description,
     brochure: r.brochure,
+    isClickable: !!r.is_clickable,
+    linkUrl: r.link_url,
     registrationHeading: r.registration_heading,
     overview: parseJson(r.overview),
     gainsHeading: r.gains_heading,
@@ -67,6 +73,7 @@ function validateGains(v) {
   for (const g of v) {
     if (!g || typeof g !== "object") return "each gain must be an object";
     if (typeof g.text !== "string" || !g.text.trim() || g.text.length > 300) return "each gain needs text (≤300 chars)";
+    if (g.iconSrc != null && typeof g.iconSrc !== "string") return "gain iconSrc must be a string";
   }
   return null;
 }
@@ -181,6 +188,13 @@ function collectColumns(body, { partial }) {
   }
   if (body.isActive !== undefined) cols.is_active = body.isActive ? 1 : 0;
   if (body.isPublished !== undefined) cols.is_published = body.isPublished ? 1 : 0;
+  if (body.isClickable !== undefined) cols.is_clickable = body.isClickable ? 1 : 0;
+  if (body.linkUrl !== undefined) {
+    const u = body.linkUrl == null ? "" : String(body.linkUrl).trim();
+    if (!u) cols.link_url = null;
+    else if (!SAFE_LINK_RE.test(u)) fields.linkUrl = "Link URL must be a relative path (/…) or an http(s):// URL";
+    else cols.link_url = u;
+  }
   if (body.sortOrder !== undefined) {
     const n = parseInt(body.sortOrder, 10);
     if (Number.isNaN(n) || n < 0) fields.sortOrder = "sortOrder must be an integer ≥ 0";
@@ -316,7 +330,17 @@ async function create(req, res) {
     try {
       result = await query(`INSERT INTO solution_programs (${columns.join(", ")}) VALUES (${placeholders})`, Object.values(cols));
     } catch (err) {
-      if (err.code === "ER_DUP_ENTRY") return sendError(res, 409, "SLUG_CONFLICT", `Slug '${slug}' is already in use`);
+      if (err.code === "ER_DUP_ENTRY") {
+        // Revive a soft-deleted row holding this slug (hidden from the list).
+        const dead = await query(`SELECT id FROM solution_programs WHERE slug = ? AND delete_status = 1 LIMIT 1`, [slug]);
+        if (dead[0]) {
+          const setClause = columns.map((c) => `${c} = ?`).join(", ");
+          await query(`UPDATE solution_programs SET ${setClause}, delete_status = 0 WHERE id = ?`, [...Object.values(cols), dead[0].id]);
+          const row = await fetchBySlug(slug);
+          return res.status(201).json({ data: mapProgram(row) });
+        }
+        return sendError(res, 409, "SLUG_CONFLICT", `Slug '${slug}' is already in use`);
+      }
       throw err;
     }
 

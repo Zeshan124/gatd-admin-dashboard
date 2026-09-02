@@ -5,7 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 
-export default function SolutionCategoryRow({ title, items, clickable = false }) {
+// Only allow same-site relative paths (/…) or http(s) absolute URLs as a card link
+// — never javascript:/data: etc. (defence-in-depth; also validated server-side).
+const SAFE_LINK_RE = /^(https?:\/\/|\/(?!\/))/i;
+
+export default function SolutionCategoryRow({ title, items }) {
   const scrollRef = useRef(null);
 
   const scroll = (dir) => {
@@ -86,11 +90,13 @@ export default function SolutionCategoryRow({ title, items, clickable = false })
           );
 
           const cardStyle = { width: "clamp(220px, calc(25vw - 28px), 300px)", scrollSnapAlign: "start" };
+          const safeHref = item.href && SAFE_LINK_RE.test(item.href) ? item.href : null;
 
-          return clickable ? (
+          // Admin-controlled: a card links out only when it has a safe href.
+          return safeHref ? (
             <Link
               key={item.id}
-              href={item.href || "#"}
+              href={safeHref}
               className="sol-card shrink-0 rounded-2xl overflow-hidden flex flex-col group"
               style={cardStyle}
             >

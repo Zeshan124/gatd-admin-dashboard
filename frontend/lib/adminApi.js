@@ -255,6 +255,14 @@ export const brochuresApi = {
   },
 };
 
+// ── Company Profile settings (header popup) ──────────────────────────────────
+export const companyProfileApi = {
+  /** { data: {...settings} } */
+  get: () => request("/admin/company-profile"),
+  /** Update settings → { data: {...} } */
+  update: (body) => request("/admin/company-profile", { method: "PATCH", body }),
+};
+
 // ── Solutions / Programs content (CMS) ───────────────────────────────────────
 // Three-level hierarchy managed from the dashboard:
 //   Solution (parent_solutions) → Program (child_solutions) → Subprogram (solution_programs)

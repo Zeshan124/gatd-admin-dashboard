@@ -76,6 +76,26 @@ const solutions = [
     image: "/images/solutions/Event-Management/7.jpg",
     href: "/solutions/event-management",
   },
+   {
+    id: "global-conferences",
+    label: "Global Conferences",
+    badge: "Solutions",
+    title: "Global Conferences",
+    description:
+      "At Global ATD, we transform ideas into impactful experiences through strategically designed and flawlessly executed events. Whether it’s engaging key stakeholders, celebrating milestones, or unveiling new initiatives, our expert event management team ensures every element aligns with your objectives and delivers measurable results.",
+    image: "/images/solutions/Event-Management/7.jpg",
+    href: "/solutions/event-management",
+  },
+   {
+    id: "industry-specific",
+    label: "Industry Specific",
+    badge: "Solutions",
+    title: "Industry Specific",
+    description:
+      "At Global ATD, we transform ideas into impactful experiences through strategically designed and flawlessly executed events. Whether it’s engaging key stakeholders, celebrating milestones, or unveiling new initiatives, our expert event management team ensures every element aligns with your objectives and delivers measurable results.",
+    image: "/images/solutions/Event-Management/7.jpg",
+    href: "/solutions/event-management",
+  },
 ];
 
 export default function OurSolutions() {

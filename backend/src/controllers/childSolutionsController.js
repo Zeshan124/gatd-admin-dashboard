@@ -15,6 +15,10 @@ const STRING_FIELDS = [
   ["audience_heading", "audienceHeading"], ["audience_image", "audienceImage"], ["brochure", "brochure"],
 ];
 
+// A link target is safe only if it's a same-site relative path (/…, not //) or an
+// http(s) absolute URL — this blocks javascript:/data:/vbscript: XSS in the href.
+const SAFE_LINK_RE = /^(https?:\/\/|\/(?!\/))/i;
+
 const PROGRAM_COUNT_SUBQ =
   "(SELECT COUNT(*) FROM solution_programs sp WHERE sp.child_solution_id = c.id AND sp.delete_status = 0) AS program_count";
 
@@ -43,6 +47,8 @@ function mapChild(r) {
     audienceImage: r.audience_image,
     audience: parseJson(r.audience),
     brochure: r.brochure,
+    isClickable: !!r.is_clickable,
+    linkUrl: r.link_url,
     rating: r.rating != null ? Number(r.rating) : null,
     reviews: r.reviews,
     isActive: !!r.is_active,
@@ -117,6 +123,13 @@ function collectColumns(body, { partial }) {
     else cols.reviews = n;
   }
   if (body.isActive !== undefined) cols.is_active = body.isActive ? 1 : 0;
+  if (body.isClickable !== undefined) cols.is_clickable = body.isClickable ? 1 : 0;
+  if (body.linkUrl !== undefined) {
+    const u = body.linkUrl == null ? "" : String(body.linkUrl).trim();
+    if (!u) cols.link_url = null;
+    else if (!SAFE_LINK_RE.test(u)) fields.linkUrl = "Link URL must be a relative path (/…) or an http(s):// URL";
+    else cols.link_url = u;
+  }
   if (body.sortOrder !== undefined) {
     const n = parseInt(body.sortOrder, 10);
     if (Number.isNaN(n) || n < 0) fields.sortOrder = "sortOrder must be an integer ≥ 0";
@@ -206,20 +219,26 @@ async function programmesProjection(childId, childSlug, { publishedOnly = false,
   if (activeOnly) conds.push("is_active = 1");
   if (publishedOnly) conds.push("is_published = 1");
   const rows = await query(
-    `SELECT slug, title, description, card_image, rating, reviews, is_published
+    `SELECT slug, title, description, card_image, rating, reviews, is_published, is_clickable, link_url
        FROM solution_programs WHERE ${conds.join(" AND ")} ORDER BY sort_order ASC, title ASC`,
     params
   );
-  return rows.map((p) => ({
-    slug: p.slug,
-    title: p.title,
-    description: p.description,
-    image: p.card_image,
-    rating: p.rating != null ? Number(p.rating) : null,
-    reviews: p.reviews,
-    isPublished: !!p.is_published,
-    href: p.is_published ? `/solutions/${childSlug}/${p.slug}` : "#",
-  }));
+  return rows.map((p) => {
+    // Admin-controlled clickability. Its own page only exists when published, so
+    // fall back to that only if published; a custom link_url works regardless.
+    const ownPage = p.is_published ? `/solutions/${childSlug}/${p.slug}` : null;
+    const href = p.is_clickable ? (p.link_url || ownPage) : null;
+    return {
+      slug: p.slug,
+      title: p.title,
+      description: p.description,
+      image: p.card_image,
+      rating: p.rating != null ? Number(p.rating) : null,
+      reviews: p.reviews,
+      isPublished: !!p.is_published,
+      href, // null → non-clickable card
+    };
+  });
 }
 
 // GET /apis/admin/child-solutions/:slug  (full record + programmes projection)
@@ -266,7 +285,17 @@ async function create(req, res) {
     try {
       result = await query(`INSERT INTO child_solutions (${columns.join(", ")}) VALUES (${placeholders})`, Object.values(cols));
     } catch (err) {
-      if (err.code === "ER_DUP_ENTRY") return sendError(res, 409, "SLUG_CONFLICT", `Slug '${slug}' is already in use`);
+      if (err.code === "ER_DUP_ENTRY") {
+        // Revive a soft-deleted row holding this slug (hidden from the list).
+        const dead = await query(`SELECT id FROM child_solutions WHERE slug = ? AND delete_status = 1 LIMIT 1`, [slug]);
+        if (dead[0]) {
+          const setClause = columns.map((c) => `${c} = ?`).join(", ");
+          await query(`UPDATE child_solutions SET ${setClause}, delete_status = 0 WHERE id = ?`, [...Object.values(cols), dead[0].id]);
+          const row = await fetchBySlug(slug);
+          return res.status(201).json({ data: mapChild(row) });
+        }
+        return sendError(res, 409, "SLUG_CONFLICT", `Slug '${slug}' is already in use`);
+      }
       throw err;
     }
 

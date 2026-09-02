@@ -11,6 +11,7 @@ import {
   Layers,
   BookOpen,
   Newspaper,
+  Building2,
   Users,
   Activity,
   X,
@@ -25,6 +26,7 @@ const NAV = [
   { label: "Programs", href: "/admin/programs", icon: Layers },
   { label: "Subprograms", href: "/admin/subprograms", icon: BookOpen },
   { label: "Blog", href: "/admin/blog", icon: Newspaper },
+  { label: "Company Profile", href: "/admin/company-profile", icon: Building2 },
   // { label: "Users", href: "/admin/users", icon: Users },
   // { label: "Activity", href: "/admin/activity", icon: Activity },
 ];

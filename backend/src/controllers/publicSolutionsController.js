@@ -17,7 +17,8 @@ async function catalog(req, res) {
         WHERE is_active = 1 AND delete_status = 0 ORDER BY sort_order ASC, title ASC`
     );
     const children = await query(
-      `SELECT c.parent_solution_id, c.slug, c.title, c.description, c.eyebrow, c.card_image, c.rating, c.reviews
+      `SELECT c.parent_solution_id, c.slug, c.title, c.description, c.eyebrow, c.card_image,
+              c.rating, c.reviews, c.is_clickable, c.link_url
          FROM child_solutions c JOIN parent_solutions p ON p.id = c.parent_solution_id
         WHERE c.is_active = 1 AND c.delete_status = 0 AND p.is_active = 1 AND p.delete_status = 0
         ORDER BY c.sort_order ASC, c.title ASC`
@@ -25,9 +26,13 @@ async function catalog(req, res) {
 
     const byParent = new Map();
     for (const c of children) {
+      const clickable = !!c.is_clickable;
       const item = {
         slug: c.slug, title: c.title, description: c.description, eyebrow: c.eyebrow,
         cardImage: c.card_image, rating: c.rating != null ? Number(c.rating) : null, reviews: c.reviews,
+        // Admin-controlled: whether the card links out, and to where.
+        clickable,
+        href: clickable ? (c.link_url || `/solutions/${c.slug}`) : null,
       };
       if (!byParent.has(c.parent_solution_id)) byParent.set(c.parent_solution_id, []);
       byParent.get(c.parent_solution_id).push(item);

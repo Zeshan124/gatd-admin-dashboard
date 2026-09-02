@@ -5,6 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Filter, X, Star } from "lucide-react";
 
+// Only allow same-site relative paths (/…) or http(s) absolute URLs as a card link
+// — never javascript:/data: etc. (defence-in-depth; also validated server-side).
+const SAFE_LINK_RE = /^(https?:\/\/|\/(?!\/))/i;
+
 // Deterministic fallback rating — keeps a stable, varied rating for any
 // programme that doesn't set one explicitly, so every card shows a rating.
 function hashString(str) {
@@ -113,23 +117,25 @@ export default function SolutionProgrammes({ programmes = [], heading }) {
           {displayed.map((prog) => {
             const isActive = hoveredId === prog.id;
             const { rating, reviews } = getRating(prog);
-            return (
-              <Link
-                key={prog.id}
-                href={prog.href || "#"}
-                className="prog-card flex-shrink-0 rounded-2xl overflow-hidden cursor-pointer flex flex-col"
-                style={{ width: "clamp(240px, 22vw, 300px)", scrollSnapAlign: "start" }}
-                onMouseEnter={() => setHoveredId(prog.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
+            const cardStyle = { width: "clamp(240px, 22vw, 300px)", scrollSnapAlign: "start" };
+            const safeHref = prog.href && SAFE_LINK_RE.test(prog.href) ? prog.href : null;
+            const cardClass = `prog-card flex-shrink-0 rounded-2xl overflow-hidden flex flex-col ${safeHref ? "cursor-pointer" : "cursor-default"}`;
+            const hover = {
+              onMouseEnter: () => setHoveredId(prog.id),
+              onMouseLeave: () => setHoveredId(null),
+            };
+            const inner = (
+              <>
                 {/* Image */}
-                <div className="relative w-full" style={{ height: "260px" }}>
-                  <Image
-                    src={prog.image}
-                    alt={prog.title}
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                  />
+                <div className="relative w-full bg-slate-200" style={{ height: "260px" }}>
+                  {prog.image && (
+                    <Image
+                      src={prog.image}
+                      alt={prog.title}
+                      fill
+                      className="object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                  )}
 
                   {/* Rating badge */}
                   {rating != null && (
@@ -158,7 +164,17 @@ export default function SolutionProgrammes({ programmes = [], heading }) {
                     </p>
                   </div>
                 </div>
+              </>
+            );
+
+            return safeHref ? (
+              <Link key={prog.id} href={safeHref} className={cardClass} style={cardStyle} {...hover}>
+                {inner}
               </Link>
+            ) : (
+              <div key={prog.id} className={cardClass} style={cardStyle} {...hover}>
+                {inner}
+              </div>
             );
           })}
         </div>

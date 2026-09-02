@@ -31,10 +31,20 @@ function TypeBadge({ type }) {
       ? "bg-purple-50 text-purple-700 ring-purple-200"
       : type === "program"
       ? "bg-teal-50 text-teal-700 ring-teal-200"
+      : type === "company_profile"
+      ? "bg-amber-50 text-amber-700 ring-amber-200"
       : "bg-slate-100 text-slate-600 ring-slate-200";
+  const label =
+    type === "solution"
+      ? "Solution"
+      : type === "program"
+      ? "Program"
+      : type === "company_profile"
+      ? "Company Profile"
+      : type || "—";
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${cls}`}>
-      {type === "solution" ? "Solution" : type === "program" ? "Program" : type || "—"}
+      {label}
     </span>
   );
 }
@@ -251,6 +261,7 @@ export default function BrochuresPage() {
           <option value="">All types</option>
           <option value="solution">Solution</option>
           <option value="program">Program</option>
+          <option value="company_profile">Company Profile</option>
         </select>
         <select
           value={status}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Clock, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, Clock, Loader2, AlertTriangle, ChevronRight, Eye } from "lucide-react";
 import DOMPurify from "dompurify";
 import { publicBlogsApi } from "@/lib/publicApi";
 
@@ -21,9 +21,65 @@ function currentSlug() {
   return parts[parts.length - 1] || null;
 }
 
+// Card used in the "Related articles" grid — mirrors the blog listing card so
+// the design stays consistent across all blog pages.
+function RelatedCard({ post }) {
+  return (
+    <Link
+      href={`/blog/${post.slug}/`}
+      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-lg hover:-translate-y-0.5"
+    >
+      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+        {post.coverImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={post.coverImage} alt={post.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-slate-300">GATD</div>
+        )}
+        {post.category && (
+          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-brand shadow-sm">
+            {post.category}
+          </span>
+        )}
+        {post.views != null && (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm backdrop-blur-sm">
+            <Eye className="h-3.5 w-3.5 text-slate-500" />
+            {Number(post.views).toLocaleString()}
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="text-lg font-bold leading-snug text-[#414143] transition-colors duration-300 group-hover:text-brand">
+          {post.title}
+        </h3>
+        {post.excerpt && <p className="mt-2 text-sm text-slate-500 line-clamp-2">{post.excerpt}</p>}
+
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+          {post.publishedAt && (
+            <span className="inline-flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" /> {formatDate(post.publishedAt)}
+            </span>
+          )}
+          {post.readMinutes ? (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" /> {post.readMinutes} min read
+            </span>
+          ) : null}
+        </div>
+
+        <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand">
+          Read more <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export default function BlogArticle() {
   const [status, setStatus] = useState("loading"); // loading | ready | notfound | error
   const [post, setPost] = useState(null);
+  const [related, setRelated] = useState([]);
 
   const load = useCallback(async () => {
     const slug = currentSlug();
@@ -45,9 +101,68 @@ export default function BlogArticle() {
     load();
   }, [load]);
 
+  // The page is client-rendered (static-export sentinel), so per-post SEO — the
+  // tab title and <meta name="description"> — is applied here from the CMS fields.
   useEffect(() => {
-    if (post?.title) document.title = `${post.title} — GATD Blog`;
+    if (!post) return;
+    document.title = `${post.metaTitle || post.title} — GATD Blog`;
+    const desc = post.metaDescription || post.excerpt || "";
+    if (desc) {
+      let tag = document.querySelector('meta[name="description"]');
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute("name", "description");
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("content", desc);
+    }
   }, [post]);
+
+  // Related articles: every other published post except the one being viewed.
+  useEffect(() => {
+    if (status !== "ready") return;
+    const activeSlug = post?.slug || currentSlug();
+    let alive = true;
+    publicBlogsApi
+      .list({ page: 1, pageSize: 50 })
+      .then((res) => {
+        if (!alive) return;
+        const all = Array.isArray(res?.data) ? res.data : [];
+        setRelated(all.filter((p) => p.slug && p.slug !== activeSlug));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [status, post?.slug]);
+
+  // Sanitize the admin HTML and build a Table of Contents from its h2/h3
+  // headings, injecting anchor IDs so the TOC links scroll to each section.
+  const { html, toc } = useMemo(() => {
+    const raw = post?.content || "";
+    if (!raw) return { html: "", toc: [] };
+    const clean = DOMPurify.sanitize(raw, {
+      ADD_TAGS: ["iframe"],
+      ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling", "target", "rel"],
+    });
+    if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+      return { html: clean, toc: [] };
+    }
+    const doc = new DOMParser().parseFromString(clean, "text/html");
+    const items = [];
+    const seen = {};
+    doc.querySelectorAll("h2, h3").forEach((h) => {
+      const text = (h.textContent || "").trim();
+      if (!text) return;
+      const base =
+        text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "section";
+      let id = base;
+      if (seen[base] != null) { seen[base] += 1; id = `${base}-${seen[base]}`; } else { seen[base] = 0; }
+      h.setAttribute("id", id);
+      items.push({ id, text, level: h.tagName === "H3" ? 3 : 2 });
+    });
+    return { html: doc.body.innerHTML, toc: items };
+  }, [post?.content]);
 
   if (status === "loading") {
     return (
@@ -81,13 +196,6 @@ export default function BlogArticle() {
     );
   }
 
-  // Defense-in-depth: sanitize the admin-authored HTML before rendering.
-  // Runs client-side only (this branch renders after the client fetch).
-  const cleanHtml = DOMPurify.sanitize(post.content || "", {
-    ADD_TAGS: ["iframe"],
-    ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling", "target", "rel"],
-  });
-
   return (
     <main className="pt-28 pb-24">
       <article className="mx-auto px-6 lg:px-24">
@@ -99,8 +207,7 @@ export default function BlogArticle() {
           {post.category && (
             <span className="inline-block rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand">{post.category}</span>
           )}
-          <h1 className="mt-3 text-3xl font-bold text-[#414143] sm:text-4xl">{post.title}</h1>
-          {post.excerpt && <p className="mt-4 text-lg text-slate-500">{post.excerpt}</p>}
+          <h1 className="mt-3 text-4xl font-bold text-[#414143] leading-tight sm:text-5xl">{post.title}</h1>
 
           <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-slate-100 pb-6 text-sm text-slate-500">
             {(post.authorName || post.authorImage) && (
@@ -132,19 +239,77 @@ export default function BlogArticle() {
           </div>
         )}
 
-        {/* Admin-authored HTML body */}
-        <div className="blog-content mt-8" dangerouslySetInnerHTML={{ __html: cleanHtml }} />
+        {/* Lead paragraph (excerpt) — standardized below the banner, above the body */}
+        {post.excerpt && (
+          <p className="mt-8 text-lg sm:text-xl leading-relaxed text-slate-600">{post.excerpt}</p>
+        )}
 
-        {Array.isArray(post.tags) && post.tags.length > 0 && (
-          <div className="mt-10 flex flex-wrap gap-2 border-t border-slate-100 pt-6">
-            {post.tags.map((t) => (
-              <span key={t} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                #{t}
-              </span>
+        {/* Mobile: collapsible "On this page", above the content */}
+        {toc.length > 0 && (
+          <details className="lg:hidden mt-8 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <summary className="cursor-pointer select-none text-sm font-bold text-slate-800">
+              On this page
+            </summary>
+            <ul className="mt-3 space-y-2">
+              {toc.map((item) => (
+                <li key={item.id} className={item.level === 3 ? "pl-4" : ""}>
+                  <a href={`#${item.id}`} className="group inline-flex items-start gap-1.5 text-sm text-slate-600 hover:text-brand">
+                    <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-brand" />
+                    <span>{item.text}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        {/* Desktop: Table of Contents (left) + content (right) */}
+        <div className={toc.length > 0 ? "mt-8 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12" : "mt-8"}>
+          {toc.length > 0 && (
+            <aside className="hidden lg:block">
+              <nav className="sticky top-28">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">On this page</p>
+                <ul className="space-y-2.5 border-l border-slate-200 pl-4">
+                  {toc.map((item) => (
+                    <li key={item.id} className={item.level === 3 ? "pl-3" : ""}>
+                      <a
+                        href={`#${item.id}`}
+                        className="group flex items-start gap-1.5 text-sm leading-snug text-slate-600 hover:text-brand transition-colors"
+                      >
+                        <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
+                        <span>{item.text}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </aside>
+          )}
+
+          {/* Admin-authored HTML body */}
+          <div className="blog-content min-w-0" dangerouslySetInnerHTML={{ __html: html }} />
+        </div>
+      </article>
+
+      {/* Related articles — every other published post */}
+      {related.length > 0 && (
+        <section className="mx-auto mt-20 border-t border-slate-100 px-6 pt-14 lg:px-24">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-brand">Keep reading</p>
+              <h2 className="mt-1 text-2xl font-bold text-[#414143] sm:text-3xl">Related articles</h2>
+            </div>
+            <Link href="/blog/" className="inline-flex items-center gap-1 text-sm font-semibold text-brand hover:text-brand-dark">
+              View all <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {related.map((p) => (
+              <RelatedCard key={p.slug} post={p} />
             ))}
           </div>
-        )}
-      </article>
+        </section>
+      )}
 
       <style jsx global>{`
         .blog-content {
@@ -152,17 +317,23 @@ export default function BlogArticle() {
           font-size: 1.0625rem;
           line-height: 1.8;
         }
+        /* TOC anchors: keep the target heading clear of the sticky navbar. */
+        .blog-content :is(h2, h3, h4) {
+          scroll-margin-top: 7rem;
+        }
         .blog-content h2 {
-          font-size: 1.6rem;
+          font-size: 1.95rem;
           font-weight: 700;
           color: #414143;
-          margin: 2rem 0 0.75rem;
+          margin: 2.25rem 0 0.85rem;
+          line-height: 1.25;
         }
         .blog-content h3 {
-          font-size: 1.3rem;
+          font-size: 1.55rem;
           font-weight: 700;
           color: #414143;
-          margin: 1.75rem 0 0.5rem;
+          margin: 1.85rem 0 0.55rem;
+          line-height: 1.3;
         }
         .blog-content p {
           margin: 0 0 1.15rem;
@@ -206,10 +377,10 @@ export default function BlogArticle() {
           margin: 1.5rem 0;
         }
         .blog-content h4 {
-          font-size: 1.1rem;
+          font-size: 1.25rem;
           font-weight: 700;
           color: #414143;
-          margin: 1.5rem 0 0.5rem;
+          margin: 1.6rem 0 0.5rem;
         }
         /* Editor-authored headings often carry inline colours (e.g. a pasted
            span with color:rgb(0,0,0)). Force the brand ink on headings and any

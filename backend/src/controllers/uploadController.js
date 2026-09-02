@@ -9,15 +9,17 @@ const { sendError } = require("../utils/http");
 const UPLOADS_DIR = path.join(__dirname, "..", "..", "uploads");
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-// mime → extension whitelist (raster images + PDF brochures).
-// NOTE: SVG is intentionally excluded — it can embed <script> and execute as
-// stored XSS when opened directly from the uploads origin. Icons are set by
-// pasting a path/URL, not uploaded here, so raster formats are sufficient.
+// mime → extension whitelist (raster images + SVG icons + PDF brochures).
+// SVG can embed <script>; it's allowed for icons but the /uploads responses are
+// served with `X-Content-Type-Options: nosniff` + a restrictive CSP `sandbox`
+// (see app.js), so an SVG opened directly from the uploads origin can't execute
+// script (defence against stored XSS).
 const ALLOWED = new Map([
   ["image/jpeg", "jpg"],
   ["image/png", "png"],
   ["image/webp", "webp"],
   ["image/gif", "gif"],
+  ["image/svg+xml", "svg"],
   ["application/pdf", "pdf"],
 ]);
 
@@ -56,7 +58,7 @@ function handleUpload(req, res) {
         return sendError(res, 413, "FILE_TOO_LARGE", "File exceeds the 8 MB limit");
       }
       if (err.message === "UNSUPPORTED_TYPE") {
-        return sendError(res, 415, "UNSUPPORTED_TYPE", "Only images (jpg, png, webp, gif) and PDF files are allowed");
+        return sendError(res, 415, "UNSUPPORTED_TYPE", "Only images (jpg, png, webp, gif, svg) and PDF files are allowed");
       }
       console.error("[upload] error:", err);
       return sendError(res, 500, "UPLOAD_ERROR", "Could not process the upload");

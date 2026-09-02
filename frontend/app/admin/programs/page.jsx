@@ -387,6 +387,8 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
   const [reviews, setReviews] = useState(editing?.reviews != null ? String(editing.reviews) : "");
   const [sortOrder, setSortOrder] = useState(editing?.sortOrder != null ? String(editing.sortOrder) : "0");
   const [active, setActive] = useState(editing?.isActive ?? true);
+  const [clickable, setClickable] = useState(editing?.isClickable ?? true);
+  const [linkUrl, setLinkUrl] = useState(editing?.linkUrl || "");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -426,6 +428,8 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
       audience: audience.filter((s) => s && s.trim()).map((s) => s.trim()),
       sortOrder: Number(sortOrder) || 0,
       isActive: active,
+      isClickable: clickable,
+      linkUrl: clickable ? nn(linkUrl) : null,
     };
     if (rating !== "") body.rating = Number(rating);
     if (reviews !== "") body.reviews = Number(reviews);
@@ -520,6 +524,19 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
         <div className="grid grid-cols-2 gap-4">
           <NumberField label="Sort order" min={0} value={sortOrder} onChange={setSortOrder} hint="Lower shows first." />
           <Toggle label="Visibility" value={active} onChange={setActive} />
+        </div>
+      </Section>
+
+      <Section title="Catalog card" description="Controls this program's card on the public /solutions page.">
+        <div className="grid grid-cols-2 gap-4">
+          <Toggle label="Clickable card" value={clickable} onChange={setClickable} onText="Clickable" offText="Not clickable" />
+          <TextField
+            label="Link URL (optional)"
+            value={linkUrl}
+            onChange={setLinkUrl}
+            placeholder={`/solutions/${slug || "…"}`}
+            hint="Leave blank to link to this program's own page. Ignored when not clickable."
+          />
         </div>
       </Section>
 

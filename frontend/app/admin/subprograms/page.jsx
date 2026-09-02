@@ -409,6 +409,8 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [sortOrder, setSortOrder] = useState(editing?.sortOrder != null ? String(editing.sortOrder) : "0");
   const [active, setActive] = useState(editing?.isActive ?? true);
   const [published, setPublished] = useState(editing?.isPublished ?? true);
+  const [clickable, setClickable] = useState(editing?.isClickable ?? true);
+  const [linkUrl, setLinkUrl] = useState(editing?.linkUrl || "");
 
   // JSON sections stored as raw text; parsed at save.
   const stringifyOrEmpty = (v) => (v == null ? "" : JSON.stringify(v, null, 2));
@@ -459,7 +461,9 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       gainsHeading: nn(gainsHeading),
       focusHeading: nn(focusHeading),
       registrationHeading: nn(registrationHeading),
-      gains: gains.filter((g) => g && g.text && g.text.trim()).map((g) => ({ text: g.text.trim() })),
+      gains: gains
+        .filter((g) => g && g.text && g.text.trim())
+        .map((g) => (g.iconSrc && g.iconSrc.trim() ? { text: g.text.trim(), iconSrc: g.iconSrc.trim() } : { text: g.text.trim() })),
       focusAreas: focusAreas
         .filter((f) => f && f.title && f.title.trim() && f.description && f.description.trim())
         .map((f) => (f.iconSrc && f.iconSrc.trim() ? { title: f.title.trim(), description: f.description.trim(), iconSrc: f.iconSrc.trim() } : { title: f.title.trim(), description: f.description.trim() })),
@@ -477,6 +481,8 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       sortOrder: Number(sortOrder) || 0,
       isActive: active,
       isPublished: published,
+      isClickable: clickable,
+      linkUrl: clickable ? nn(linkUrl) : null,
     };
     if (price !== "") body.priceCents = Math.round(Number(price) * 100);
     if (rating !== "") body.rating = Number(rating);
@@ -575,6 +581,19 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
         </div>
       </Section>
 
+      <Section title="Catalog card" description="Controls this subprogram's card on its parent Program page.">
+        <div className="grid grid-cols-2 gap-4">
+          <Toggle label="Clickable card" value={clickable} onChange={setClickable} onText="Clickable" offText="Not clickable" />
+          <TextField
+            label="Link URL (optional)"
+            value={linkUrl}
+            onChange={setLinkUrl}
+            placeholder={`/solutions/${childSolutionSlug || "…"}/${slug || "…"}`}
+            hint="Leave blank to link to this subprogram's own page (published only)."
+          />
+        </div>
+      </Section>
+
       <Section title="Hero & media">
         <div className="grid grid-cols-2 gap-4">
           <MediaInput label="Banner" value={banner} onChange={setBanner} />
@@ -613,7 +632,18 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
 
       <Section title="What you'll gain">
         <TextField label="Gains heading" value={gainsHeading} onChange={setGainsHeading} />
-        <ObjectListEditor label="Gains" value={gains} onChange={setGains} addLabel="Add gain" fields={[{ key: "text", label: "Gain text", type: "textarea" }]} />
+        <ObjectListEditor
+          label="Gains"
+          value={gains}
+          onChange={setGains}
+          addLabel="Add gain"
+          itemLabel="Gain"
+          labeledFields
+          fields={[
+            { key: "text", label: "Gain text", type: "textarea", placeholder: "What the participant will gain" },
+            { key: "iconSrc", label: "Icon (optional)", type: "image" },
+          ]}
+        />
       </Section>
 
       <Section title="Focus areas">

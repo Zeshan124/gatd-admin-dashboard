@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS child_solutions (
   audience_image      VARCHAR(500) NULL,
   audience            JSON         NULL,
   brochure            VARCHAR(500) NULL,
+  is_clickable        TINYINT(1)   NOT NULL DEFAULT 1,   -- does the /solutions card link out?
+  link_url            VARCHAR(500) NULL,                 -- custom link; empty → /solutions/<slug>
   rating              DECIMAL(2,1) NULL,
   reviews             INT          NOT NULL DEFAULT 0,
   is_active           TINYINT(1)   NOT NULL DEFAULT 1,
@@ -91,6 +93,8 @@ CREATE TABLE IF NOT EXISTS solution_programs (
   pricing_heading      VARCHAR(120) NULL,
   pricing_description  TEXT         NULL,
   brochure             VARCHAR(500) NULL,
+  is_clickable         TINYINT(1)   NOT NULL DEFAULT 1,   -- does the programme card link out?
+  link_url             VARCHAR(500) NULL,                 -- custom link; empty → /solutions/<child>/<slug>
   registration_heading VARCHAR(255) NULL,
   overview             JSON         NULL,
   gains_heading        VARCHAR(255) NULL,

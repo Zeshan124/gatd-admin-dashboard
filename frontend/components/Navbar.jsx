@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
-import { publicSolutionsApi } from "@/lib/publicApi";
+import { publicSolutionsApi, publicCompanyProfileApi } from "@/lib/publicApi";
+import CompanyProfileModal from "@/components/CompanyProfileModal";
 
 // Simple (single-level) dropdown for the "Resources" menu. Only Blogs has a page
 // today; the rest are placeholders (#) until their pages exist.
@@ -52,6 +53,24 @@ export default function Navbar() {
       alive = false;
     };
   }, []);
+
+  // Company Profile popup (header button) + its CMS settings.
+  const [cpOpen, setCpOpen] = useState(false);
+  const [cp, setCp] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    publicCompanyProfileApi
+      .get()
+      .then((res) => {
+        if (alive) setCp(res?.data || null);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const showCompanyProfile = cp?.isEnabled !== false;
+  const cpLabel = cp?.buttonLabel || "Company Profile";
 
   // Normalize the API tree (slug/title/href) to the shape the dropdown markup
   // expects (category/label). Solution → Program → Subprogram.
@@ -254,27 +273,30 @@ export default function Navbar() {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden lg:flex items-center">
-            <Link
-              href="/brochures/GATD-Company-Profile.pdf"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D52029] hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-            >
-              <svg
-                className="w-4 h-4 shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+          {showCompanyProfile && (
+            <div className="hidden lg:flex items-center">
+              <button
+                type="button"
+                onClick={() => setCpOpen(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D52029] hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                />
-              </svg>
-              Company Profile
-            </Link>
-          </div>
+                <svg
+                  className="w-4 h-4 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+                  />
+                </svg>
+                {cpLabel}
+              </button>
+            </div>
+          )}
 
           {/* Mobile Toggle */}
           <button
@@ -459,30 +481,41 @@ export default function Navbar() {
             ))}
           </nav>
 
-          <div className="px-4 py-6 border-t border-slate-100">
-            <Link
-              href="/brochures/GATD-Company-Profile.pdf"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#D52029] hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors shadow-md"
-            >
-              <svg
-                className="w-4 h-4 shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+          {showCompanyProfile && (
+            <div className="px-4 py-6 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setCpOpen(true);
+                }}
+                className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#D52029] hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors shadow-md"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                />
-              </svg>
-              Download Company Profile
-            </Link>
-          </div>
+                <svg
+                  className="w-4 h-4 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+                  />
+                </svg>
+                {cpLabel}
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      <CompanyProfileModal
+        open={cpOpen}
+        onClose={() => setCpOpen(false)}
+        settings={cp}
+      />
     </header>
   );
 }

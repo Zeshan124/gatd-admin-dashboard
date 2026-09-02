@@ -34,6 +34,22 @@ export default function GATDHero() {
               Inspired to Achieve
             </h1>
 
+            {/* Hero video — mobile/tablet only: directly below the heading */}
+            <div
+              className="lg:hidden relative w-full rounded-xl overflow-hidden shadow-xl mb-8"
+              style={{ height: "clamp(200px, 56vw, 360px)" }}
+            >
+              <video
+                className="absolute inset-0 w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+              >
+                <source src="/video/video-bg.mp4" type="video/mp4" />
+              </video>
+            </div>
+
             {/* Video Preview Button */}
             <button
               onClick={() => setVideoPlaying(true)}
@@ -115,9 +131,9 @@ export default function GATDHero() {
             priority
           />
         </div> */}
-        {/* ── Hero Video ── */}
+        {/* ── Hero Video (large screens ≥ lg; on mobile it renders under the heading) ── */}
         <div
-          className="relative w-full rounded-2xl overflow-hidden shadow-xl"
+          className="hidden lg:block relative w-full rounded-2xl overflow-hidden shadow-xl"
           style={{ height: "clamp(220px, 38vw, 520px)" }}
         >
           <video

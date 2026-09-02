@@ -96,7 +96,26 @@ async function create(req, res) {
         [slug, title, description, isActive, sortOrder]
       );
     } catch (err) {
-      if (err.code === "ER_DUP_ENTRY") return sendError(res, 409, "SLUG_CONFLICT", `Slug '${slug}' is already in use`);
+      if (err.code === "ER_DUP_ENTRY") {
+        // The slug is held by an existing row. If it was soft-deleted (hidden
+        // from the list), revive it with the new values — the intuitive result
+        // for the admin, who can't see the deleted record.
+        const dead = await query(
+          `SELECT id FROM parent_solutions WHERE slug = ? AND delete_status = 1 LIMIT 1`,
+          [slug]
+        );
+        if (dead[0]) {
+          await query(
+            `UPDATE parent_solutions
+                SET title = ?, description = ?, is_active = ?, sort_order = ?, delete_status = 0
+              WHERE id = ?`,
+            [title, description, isActive, sortOrder, dead[0].id]
+          );
+          const revived = await query(`SELECT p.*, ${CHILD_COUNT_SUBQ} FROM parent_solutions p WHERE p.id = ?`, [dead[0].id]);
+          return res.status(201).json({ data: mapParent(revived[0]) });
+        }
+        return sendError(res, 409, "SLUG_CONFLICT", `Slug '${slug}' is already in use`);
+      }
       throw err;
     }
 

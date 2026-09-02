@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS blogs (
   category         VARCHAR(120) NULL,
   tags             JSON         NULL,
   read_minutes     INT          NULL,
+  views            INT          NOT NULL DEFAULT 0,   -- admin-managed viewer count
   meta_title       VARCHAR(255) NULL,
   meta_description VARCHAR(500) NULL,
   is_featured      TINYINT(1)   NOT NULL DEFAULT 0,

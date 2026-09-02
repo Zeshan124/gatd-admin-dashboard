@@ -55,3 +55,9 @@ export const publicSolutionsApi = {
   /** All published Subprogram slugs → { data: [{ slug, title, childSolutionSlug }] } */
   programSlugs: () => pub("/public/programs"),
 };
+
+// Company Profile settings for the header popup (public read).
+export const publicCompanyProfileApi = {
+  /** { data: { isEnabled, eyebrow, heading, description, buttonLabel, pdfUrl } } */
+  get: () => pub("/public/company-profile"),
+};

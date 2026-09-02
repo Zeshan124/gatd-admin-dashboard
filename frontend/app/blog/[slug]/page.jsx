@@ -12,6 +12,10 @@ export function generateStaticParams() {
 
 export const metadata = {
   title: "Article — GATD Blog",
+  // Fallback for the static sentinel HTML; the client overrides both title and
+  // description per-post from the CMS once the article loads (see BlogArticle).
+  description:
+    "Insights, frameworks and perspectives on HR, leadership and organisational development from GATD.",
 };
 
 export default function BlogDetailPage() {

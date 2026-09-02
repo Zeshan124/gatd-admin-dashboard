@@ -57,7 +57,7 @@ export default function WhatYouWillGain({ heading, gains }) {
             const isLastCol = col === 2;
             return (
               <div
-                key={item.id}
+                key={item.id ?? idx}
                 className={[
                   "flex flex-col py-10",
                   col === 0 ? "lg:pr-10" : col === 2 ? "lg:pl-10" : "lg:px-10",

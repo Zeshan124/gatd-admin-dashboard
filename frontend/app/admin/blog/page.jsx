@@ -328,6 +328,7 @@ function BlogFormDrawer({ editing, onClose, onSaved }) {
   const [authorName, setAuthorName] = useState(editing?.authorName || "");
   const [authorImage, setAuthorImage] = useState(editing?.authorImage || null);
   const [readMinutes, setReadMinutes] = useState(editing?.readMinutes != null ? String(editing.readMinutes) : "");
+  const [views, setViews] = useState(editing?.views != null ? String(editing.views) : "");
   const [publishedAt, setPublishedAt] = useState(toDateInput(editing?.publishedAt));
   const [isFeatured, setIsFeatured] = useState(editing?.isFeatured ?? false);
   const [isPublished, setIsPublished] = useState(editing?.isPublished ?? true);
@@ -358,6 +359,7 @@ function BlogFormDrawer({ editing, onClose, onSaved }) {
       authorName: nn(authorName),
       authorImage: authorImage || null,
       readMinutes: readMinutes === "" ? null : Number(readMinutes),
+      views: views === "" ? 0 : Number(views),
       publishedAt: publishedAt || null,
       isFeatured,
       isPublished,
@@ -435,9 +437,10 @@ function BlogFormDrawer({ editing, onClose, onSaved }) {
           <MediaInput label="Cover image" value={coverImage} onChange={setCoverImage} />
           <MediaInput label="Author photo" value={authorImage} onChange={setAuthorImage} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <TextField label="Author name" value={authorName} onChange={setAuthorName} />
           <NumberField label="Read time (minutes)" min={0} value={readMinutes} onChange={setReadMinutes} error={fe.readMinutes} />
+          <NumberField label="Views" min={0} value={views} onChange={setViews} error={fe.views} hint="Shown on blog cards." />
         </div>
       </Section>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Calendar, Clock, ArrowRight, Loader2, Inbox, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, ArrowRight, Loader2, Inbox, AlertTriangle, Eye } from "lucide-react";
 import { publicBlogsApi } from "@/lib/publicApi";
 
 function formatDate(iso) {
@@ -30,6 +30,12 @@ function BlogCard({ post }) {
         {post.category && (
           <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-brand shadow-sm">
             {post.category}
+          </span>
+        )}
+        {post.views != null && (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm backdrop-blur-sm">
+            <Eye className="h-3.5 w-3.5 text-slate-500" />
+            {Number(post.views).toLocaleString()}
           </span>
         )}
       </div>
