@@ -24,6 +24,12 @@ export const MESSAGE_STATUSES = [
   { value: "archived", label: "Archived", cls: "bg-amber-50 text-amber-700 ring-amber-200" },
 ];
 
+/** Newsletter-subscriber status vocabulary. */
+export const NEWSLETTER_STATUSES = [
+  { value: "subscribed", label: "Subscribed", cls: "bg-green-50 text-green-700 ring-green-200" },
+  { value: "unsubscribed", label: "Unsubscribed", cls: "bg-slate-100 text-slate-600 ring-slate-200" },
+];
+
 /** Brochure-lead status vocabulary. */
 export const BROCHURE_STATUSES = [
   { value: "new", label: "New", cls: "bg-blue-50 text-blue-700 ring-blue-200" },

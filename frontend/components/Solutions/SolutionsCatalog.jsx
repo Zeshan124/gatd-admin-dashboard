@@ -35,6 +35,7 @@ export default function SolutionsCatalog() {
               href: c.href,
               rating: c.rating,
               reviews: c.reviews,
+              ratingEnabled: c.ratingEnabled,
             })),
           }))
         );

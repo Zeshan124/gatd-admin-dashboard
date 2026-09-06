@@ -11,49 +11,21 @@ import {
   X,
   AlertTriangle,
   Inbox,
-  FileDown,
-  ExternalLink,
+  Send,
   Loader2,
+  Check,
   FileSpreadsheet,
   FileText,
   Calendar,
   Trash2,
 } from "lucide-react";
-import { brochuresApi, API_BASE } from "@/lib/adminApi";
+import { newsletterApi, API_BASE } from "@/lib/adminApi";
 import { formatDate, formatDateTime } from "@/lib/format";
-import StatusBadge, { BROCHURE_STATUSES } from "@/components/admin/StatusBadge";
+import StatusBadge, { NEWSLETTER_STATUSES } from "@/components/admin/StatusBadge";
 
 const PAGE_SIZE = 25;
 
-function TypeBadge({ type }) {
-  const cls =
-    type === "solution"
-      ? "bg-purple-50 text-purple-700 ring-purple-200"
-      : type === "program"
-      ? "bg-teal-50 text-teal-700 ring-teal-200"
-      : type === "company_profile"
-      ? "bg-amber-50 text-amber-700 ring-amber-200"
-      : type === "video"
-      ? "bg-blue-50 text-blue-700 ring-blue-200"
-      : "bg-slate-100 text-slate-600 ring-slate-200";
-  const label =
-    type === "solution"
-      ? "Solution"
-      : type === "program"
-      ? "Program"
-      : type === "company_profile"
-      ? "Company Profile"
-      : type === "video"
-      ? "Video"
-      : type || "—";
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${cls}`}>
-      {label}
-    </span>
-  );
-}
-
-export default function BrochuresPage() {
+export default function NewsletterPage() {
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,21 +34,15 @@ export default function BrochuresPage() {
   const [searchInput, setSearchInput] = useState("");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
-  const [sourceType, setSourceType] = useState("");
-  const [solution, setSolution] = useState("");
-  const [program, setProgram] = useState("");
-  const [subprogram, setSubprogram] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
-
-  const [facets, setFacets] = useState({ solutions: [], programs: [], subprograms: [] });
 
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
-  const [savingStatus, setSavingStatus] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const [exporting, setExporting] = useState(false);
@@ -95,7 +61,7 @@ export default function BrochuresPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await brochuresApi.list({ q, status, sourceType, solution, program, subprogram, dateFrom, dateTo, page, pageSize: PAGE_SIZE });
+      const res = await newsletterApi.list({ q, status, dateFrom, dateTo, page, pageSize: PAGE_SIZE });
       setRows(res.data || []);
       setMeta(res.meta || null);
     } catch (e) {
@@ -105,19 +71,11 @@ export default function BrochuresPage() {
     } finally {
       setLoading(false);
     }
-  }, [q, status, sourceType, solution, program, subprogram, dateFrom, dateTo, page]);
+  }, [q, status, dateFrom, dateTo, page]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  // Filter options (loaded once) — full CMS catalog for the three dropdowns.
-  useEffect(() => {
-    brochuresApi
-      .facets()
-      .then((res) => setFacets(res.data || { solutions: [], programs: [], subprograms: [] }))
-      .catch(() => {});
-  }, []);
 
   const openDetail = async (row) => {
     setSelected(row);
@@ -125,7 +83,7 @@ export default function BrochuresPage() {
     setDetailError("");
     setDetailLoading(true);
     try {
-      const res = await brochuresApi.get(row.id);
+      const res = await newsletterApi.get(row.id);
       setDetail(res.data || res);
     } catch (e) {
       setDetailError(e.message);
@@ -140,13 +98,30 @@ export default function BrochuresPage() {
     setDetailError("");
   };
 
+  const saveSubscriber = async (fields) => {
+    const id = detail?.id ?? selected?.id;
+    if (!id) return;
+    setSaving(true);
+    setDetailError("");
+    try {
+      const res = await newsletterApi.update(id, fields);
+      const updated = res.data || res;
+      setDetail(updated);
+      setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...updated } : r)));
+    } catch (e) {
+      setDetailError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const deleteRecord = async () => {
     const id = detail?.id ?? selected?.id;
     if (!id) return;
     setDeleting(true);
     setDetailError("");
     try {
-      await brochuresApi.remove(id);
+      await newsletterApi.remove(id);
       setRows((rs) => rs.filter((r) => r.id !== id));
       setMeta((m) => (m ? { ...m, total: Math.max(0, (m.total || 0) - 1) } : m));
       closeDetail();
@@ -157,34 +132,14 @@ export default function BrochuresPage() {
     }
   };
 
-  const changeStatus = async (newStatus) => {
-    const id = detail?.id ?? selected?.id;
-    if (!id) return;
-    setSavingStatus(true);
-    setDetailError("");
-    try {
-      await brochuresApi.updateStatus(id, newStatus);
-      setDetail((d) => (d && d.id === id ? { ...d, status: newStatus } : d));
-      setRows((rs) => rs.map((r) => (r.id === id ? { ...r, status: newStatus } : r)));
-    } catch (e) {
-      setDetailError(e.message);
-    } finally {
-      setSavingStatus(false);
-    }
-  };
-
   const handleExport = async (format) => {
     setExportOpen(false);
     setExportError("");
     setExporting(true);
     try {
-      const { blob, filename } = await brochuresApi.exportFile({
+      const { blob, filename } = await newsletterApi.exportFile({
         q,
         status,
-        sourceType,
-        solution,
-        program,
-        subprogram,
         dateFrom,
         dateTo,
         ...(format === "csv" ? { format: "csv" } : {}),
@@ -212,9 +167,9 @@ export default function BrochuresPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-800">Brochure Leads</h2>
+          <h2 className="text-2xl font-extrabold text-slate-800">Newsletter Subscriptions</h2>
           <p className="text-sm text-slate-500 mt-1">
-            {loading ? "Loading…" : `${total} total lead${total === 1 ? "" : "s"}`}
+            {loading ? "Loading…" : `${total} total subscriber${total === 1 ? "" : "s"}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -261,7 +216,7 @@ export default function BrochuresPage() {
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search name, email, organisation, item…"
+            placeholder="Search email or name…"
             className="bg-transparent outline-none text-sm w-full text-slate-700 placeholder-slate-400"
           />
           {searchInput && (
@@ -271,65 +226,6 @@ export default function BrochuresPage() {
           )}
         </div>
         <select
-          value={sourceType}
-          onChange={(e) => {
-            setSourceType(e.target.value);
-            setPage(1);
-          }}
-          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors"
-        >
-          <option value="">All types</option>
-          <option value="solution">Solution</option>
-          <option value="program">Program</option>
-          <option value="company_profile">Company Profile</option>
-          <option value="video">Video</option>
-        </select>
-        <select
-          value={solution}
-          onChange={(e) => {
-            setSolution(e.target.value);
-            setPage(1);
-          }}
-          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors max-w-56"
-        >
-          <option value="">All solutions</option>
-          {facets.solutions.map((s) => (
-            <option key={s.slug} value={s.slug}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={program}
-          onChange={(e) => {
-            setProgram(e.target.value);
-            setPage(1);
-          }}
-          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors max-w-64"
-        >
-          <option value="">All programmes</option>
-          {facets.programs.map((p) => (
-            <option key={p.slug} value={p.slug}>
-              {p.title}
-            </option>
-          ))}
-        </select>
-        <select
-          value={subprogram}
-          onChange={(e) => {
-            setSubprogram(e.target.value);
-            setPage(1);
-          }}
-          className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors max-w-64"
-        >
-          <option value="">All sub programmes</option>
-          {(facets.subprograms || []).map((s) => (
-            <option key={s.slug} value={s.slug}>
-              {s.title}
-            </option>
-          ))}
-        </select>
-        <select
           value={status}
           onChange={(e) => {
             setStatus(e.target.value);
@@ -338,7 +234,7 @@ export default function BrochuresPage() {
           className="bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand transition-colors"
         >
           <option value="">All statuses</option>
-          {BROCHURE_STATUSES.map((s) => (
+          {NEWSLETTER_STATUSES.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
             </option>
@@ -402,7 +298,7 @@ export default function BrochuresPage() {
         {error ? (
           <div className="flex flex-col items-center gap-2 p-12 text-center">
             <AlertTriangle className="w-8 h-8 text-amber-500" />
-            <p className="font-semibold text-slate-700">Couldn&apos;t load brochure leads</p>
+            <p className="font-semibold text-slate-700">Couldn&apos;t load subscribers</p>
             <p className="text-sm text-slate-500 max-w-md">{error}</p>
             <p className="text-xs text-slate-400 mt-1">API: {API_BASE}</p>
             <button onClick={load} className="mt-2 px-4 py-2 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand-dark">
@@ -410,15 +306,13 @@ export default function BrochuresPage() {
             </button>
           </div>
         ) : loading ? (
-          <div className="p-12 text-center text-sm text-slate-400">Loading brochure leads…</div>
+          <div className="p-12 text-center text-sm text-slate-400">Loading subscribers…</div>
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center gap-2 p-12 text-center">
             <Inbox className="w-8 h-8 text-slate-300" />
-            <p className="font-semibold text-slate-600">No brochure leads found</p>
+            <p className="font-semibold text-slate-600">No subscribers found</p>
             <p className="text-sm text-slate-400">
-              {q || status || sourceType || solution || program || subprogram || dateFrom || dateTo
-                ? "Try adjusting your filters."
-                : "New downloads will appear here."}
+              {q || status || dateFrom || dateTo ? "Try adjusting your filters." : "New newsletter sign-ups will appear here."}
             </p>
           </div>
         ) : (
@@ -426,12 +320,10 @@ export default function BrochuresPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-5 py-3 font-semibold">Email</th>
                   <th className="px-5 py-3 font-semibold">Name</th>
-                  <th className="px-5 py-3 font-semibold">Type</th>
-                  <th className="px-5 py-3 font-semibold">Item</th>
-                  <th className="px-5 py-3 font-semibold">Country</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 font-semibold">Received</th>
+                  <th className="px-5 py-3 font-semibold">Subscribed</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -441,19 +333,10 @@ export default function BrochuresPage() {
                     onClick={() => openDetail(r)}
                     className="hover:bg-brand-50/60 cursor-pointer transition-colors"
                   >
+                    <td className="px-5 py-3.5 font-semibold text-slate-800">{r.email}</td>
+                    <td className="px-5 py-3.5 text-slate-600">{r.name || <span className="text-slate-300">—</span>}</td>
                     <td className="px-5 py-3.5">
-                      <p className="font-semibold text-slate-800">{r.name}</p>
-                      <p className="text-xs text-slate-400">{r.email}</p>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <TypeBadge type={r.sourceType} />
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-600 max-w-xs truncate">
-                      {r.itemTitle || r.itemSlug || <span className="text-slate-300">—</span>}
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">{r.country || "—"}</td>
-                    <td className="px-5 py-3.5">
-                      <StatusBadge status={r.status} statuses={BROCHURE_STATUSES} />
+                      <StatusBadge status={r.status} statuses={NEWSLETTER_STATUSES} />
                     </td>
                     <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">{formatDate(r.createdAt)}</td>
                   </tr>
@@ -494,15 +377,15 @@ export default function BrochuresPage() {
         )}
       </div>
 
-      {/* Detail drawer */}
+      {/* Detail / edit drawer */}
       {selected && (
         <DetailDrawer
           summary={selected}
           detail={detail}
           loading={detailLoading}
           error={detailError}
-          savingStatus={savingStatus}
-          onChangeStatus={changeStatus}
+          saving={saving}
+          onSave={saveSubscriber}
           onDelete={deleteRecord}
           deleting={deleting}
           onClose={closeDetail}
@@ -521,24 +404,33 @@ function Field({ label, value }) {
   );
 }
 
-function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeStatus, onDelete, deleting, onClose }) {
+function DetailDrawer({ summary, detail, loading, error, saving, onSave, onDelete, deleting, onClose }) {
   const d = detail || summary;
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [name, setName] = useState(d.name || "");
+  const [email, setEmail] = useState(d.email || "");
+  const [status, setStatus] = useState(d.status || "subscribed");
+  const [savedFlash, setSavedFlash] = useState(false);
 
-  // The captured URL + the item label mean different things per submission type,
-  // so present them accordingly (a video lead isn't a "Brochure").
-  const isVideo = d.sourceType === "video";
-  const mediaLabel = isVideo
-    ? "Video"
-    : d.sourceType === "company_profile"
-    ? "Company profile file"
-    : "Brochure";
-  const itemLabel =
-    isVideo || d.sourceType === "program"
-      ? "Programme"
-      : d.sourceType === "solution"
-      ? "Solution"
-      : "Requested item";
+  // Re-sync the form when the loaded detail arrives/changes.
+  useEffect(() => {
+    if (detail) {
+      setName(detail.name || "");
+      setEmail(detail.email || "");
+      setStatus(detail.status || "subscribed");
+    }
+  }, [detail]);
+
+  const dirty =
+    (name || "") !== (d.name || "") ||
+    (email || "") !== (d.email || "") ||
+    (status || "") !== (d.status || "");
+
+  const handleSave = async () => {
+    await onSave({ name: name.trim(), email: email.trim(), status });
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -548,16 +440,12 @@ function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeS
         <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2 text-slate-400">
-              <FileDown className="w-4 h-4" />
-              <span className="text-xs">Brochure lead</span>
+              <Send className="w-4 h-4" />
+              <span className="text-xs">Newsletter subscriber</span>
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mt-1">{d.name}</h3>
-            <a href={`mailto:${d.email}`} className="text-sm text-brand hover:underline">
-              {d.email}
-            </a>
-            <div className="mt-2 flex items-center gap-2">
-              <TypeBadge type={d.sourceType} />
-              <StatusBadge status={d.status} statuses={BROCHURE_STATUSES} />
+            <h3 className="text-lg font-bold text-slate-800 mt-1 break-all">{d.email}</h3>
+            <div className="mt-2">
+              <StatusBadge status={d.status} statuses={NEWSLETTER_STATUSES} />
             </div>
           </div>
           <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-slate-600">
@@ -573,51 +461,68 @@ function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeS
             </div>
           )}
 
-          {/* Status changer */}
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-400 mb-1.5">Status</p>
-            <select
-              value={d.status || ""}
-              disabled={savingStatus}
-              onChange={(e) => onChangeStatus(e.target.value)}
-              className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand disabled:opacity-60"
-            >
-              {BROCHURE_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-            {savingStatus && <p className="text-xs text-slate-400 mt-1">Saving…</p>}
-          </div>
-
           {loading ? (
             <p className="text-sm text-slate-400">Loading details…</p>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Country" value={d.country} />
-                <Field label="Organisation" value={d.organization} />
-                <Field label={itemLabel} value={d.itemTitle || d.itemSlug} />
-                <Field label="Received" value={formatDateTime(d.createdAt)} />
+              {/* Editable fields */}
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="text-xs uppercase tracking-wide text-slate-400">Email</span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1 w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-brand"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs uppercase tracking-wide text-slate-400">Name</span>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="—"
+                    className="mt-1 w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-brand"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs uppercase tracking-wide text-slate-400">Status</span>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="mt-1 w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand"
+                  >
+                    {NEWSLETTER_STATUSES.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving || !dirty}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand hover:bg-brand-dark text-white text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    {saving ? "Saving…" : "Save changes"}
+                  </button>
+                  {savedFlash && !dirty && (
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600">
+                      <Check className="w-4 h-4" /> Saved
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {d.brochure && (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-400 mb-1.5">{mediaLabel}</p>
-                  <a
-                    href={d.brochure}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-brand hover:underline break-all"
-                  >
-                    <ExternalLink className="w-4 h-4 shrink-0" />
-                    {d.brochure}
-                  </a>
-                </div>
-              )}
-
-              <Field label="Source page" value={d.sourcePage} />
+              {/* Provenance */}
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <Field label="Source page" value={d.sourcePage} />
+                <Field label="Subscribed" value={formatDateTime(d.createdAt)} />
+              </div>
             </>
           )}
 
@@ -625,7 +530,7 @@ function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeS
           <div className="pt-2 border-t border-slate-100">
             {confirmDelete ? (
               <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-                <p className="text-sm font-semibold text-red-700 mb-2">Delete this lead? It will be removed from the dashboard.</p>
+                <p className="text-sm font-semibold text-red-700 mb-2">Delete this subscriber? They will be removed from the list.</p>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-60">
                     Cancel
@@ -637,7 +542,7 @@ function DetailDrawer({ summary, detail, loading, error, savingStatus, onChangeS
               </div>
             ) : (
               <button onClick={() => setConfirmDelete(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700">
-                <Trash2 className="w-4 h-4" /> Delete lead
+                <Trash2 className="w-4 h-4" /> Delete subscriber
               </button>
             )}
           </div>

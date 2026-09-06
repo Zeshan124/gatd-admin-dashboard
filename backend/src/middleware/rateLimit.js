@@ -59,10 +59,11 @@ const STANDARD_WINDOWS = [
 
 const registrationRateLimit = createRateLimit(STANDARD_WINDOWS);
 const contactRateLimit = createRateLimit(STANDARD_WINDOWS);
+const newsletterRateLimit = createRateLimit(STANDARD_WINDOWS);
 // Brochure downloads can happen a bit more often as a visitor browses programmes.
 const brochureRateLimit = createRateLimit([
   { ms: 10 * 60 * 1000, max: 10 },
   { ms: 24 * 60 * 60 * 1000, max: 80 },
 ]);
 
-module.exports = { createRateLimit, registrationRateLimit, contactRateLimit, brochureRateLimit };
+module.exports = { createRateLimit, registrationRateLimit, contactRateLimit, newsletterRateLimit, brochureRateLimit };

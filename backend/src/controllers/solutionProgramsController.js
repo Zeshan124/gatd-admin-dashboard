@@ -38,6 +38,7 @@ function mapProgram(r) {
     subtext: r.subtext,
     rating: r.rating != null ? Number(r.rating) : null,
     reviews: r.reviews,
+    ratingEnabled: r.rating_enabled == null ? true : !!r.rating_enabled,
     priceCents: r.price_cents,
     currency: r.currency,
     priceFormatted: r.price_cents != null ? formatMoney(r.price_cents, r.currency) : null,
@@ -45,6 +46,7 @@ function mapProgram(r) {
     pricingHeading: r.pricing_heading,
     pricingDescription: r.pricing_description,
     brochure: r.brochure,
+    videoUrl: r.video_url,
     isClickable: !!r.is_clickable,
     linkUrl: r.link_url,
     registrationHeading: r.registration_heading,
@@ -186,6 +188,7 @@ function collectColumns(body, { partial }) {
     if (!/^[A-Z]{3}$/.test(c)) fields.currency = "currency must be a 3-letter ISO code";
     else cols.currency = c;
   }
+  if (body.ratingEnabled !== undefined) cols.rating_enabled = body.ratingEnabled ? 1 : 0;
   if (body.isActive !== undefined) cols.is_active = body.isActive ? 1 : 0;
   if (body.isPublished !== undefined) cols.is_published = body.isPublished ? 1 : 0;
   if (body.isClickable !== undefined) cols.is_clickable = body.isClickable ? 1 : 0;
@@ -194,6 +197,12 @@ function collectColumns(body, { partial }) {
     if (!u) cols.link_url = null;
     else if (!SAFE_LINK_RE.test(u)) fields.linkUrl = "Link URL must be a relative path (/…) or an http(s):// URL";
     else cols.link_url = u;
+  }
+  if (body.videoUrl !== undefined) {
+    const u = body.videoUrl == null ? "" : String(body.videoUrl).trim();
+    if (!u) cols.video_url = null;
+    else if (!SAFE_LINK_RE.test(u)) fields.videoUrl = "Video URL must be a relative path (/…) or an http(s):// URL";
+    else cols.video_url = u;
   }
   if (body.sortOrder !== undefined) {
     const n = parseInt(body.sortOrder, 10);

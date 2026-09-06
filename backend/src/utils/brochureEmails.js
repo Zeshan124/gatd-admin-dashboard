@@ -42,23 +42,29 @@ function absoluteUrl(path) {
  */
 async function sendBrochureEmails({ value }) {
   const isCompany = value.sourceType === "company_profile";
-  const kind = isCompany ? "Company Profile" : "Brochure";
-  const itemTitle = value.itemTitle || (isCompany ? "Company Profile" : "Brochure");
+  const isVideo = value.sourceType === "video";
+  const kind = isCompany ? "Company Profile" : isVideo ? "Video" : "Brochure";
+  const itemTitle = value.itemTitle || kind;
   const downloadUrl = absoluteUrl(value.brochure);
+  const actionVerb = isVideo ? "Watch" : "Download";
   const firstName = (value.name || "").trim().split(/\s+/)[0] || "there";
 
   // 1) Confirmation to the visitor -------------------------------------------
   const userSubject = isCompany
     ? "Your GATD Company Profile is ready to download"
+    : isVideo
+    ? `Your requested video — ${itemTitle}`
     : `Your requested brochure — ${itemTitle}`;
   const intro = isCompany
     ? `Thank you for your interest in Global Academy for Training & Development (GATD). ` +
       `Your copy of our company profile is ready to download below.`
+    : isVideo
+    ? `Thank you for your interest in "${itemTitle}". You can watch the video below.`
     : `Thank you for your interest in "${itemTitle}". Your brochure is ready to download below.`;
   const userText =
     `Dear ${firstName},\n\n` +
     `${intro}\n\n` +
-    (downloadUrl ? `Download: ${downloadUrl}\n\n` : "") +
+    (downloadUrl ? `${actionVerb}: ${downloadUrl}\n\n` : "") +
     `If you have any questions, simply reply to this email and our team will be happy to help.\n\n` +
     `Warm regards,\nThe GATD Team`;
   const userHtml =
@@ -68,7 +74,7 @@ async function sendBrochureEmails({ value }) {
     (downloadUrl
       ? `<p style="margin:20px 0"><a href="${esc(downloadUrl)}" ` +
         `style="display:inline-block;background:#D52029;color:#fff;text-decoration:none;` +
-        `font-weight:bold;padding:12px 22px;border-radius:8px">Download ${esc(kind)}</a></p>` +
+        `font-weight:bold;padding:12px 22px;border-radius:8px">${esc(actionVerb)} ${esc(kind)}</a></p>` +
         `<p style="font-size:12px;color:#888">If the button doesn't work, copy this link into your browser:<br>` +
         `<a href="${esc(downloadUrl)}">${esc(downloadUrl)}</a></p>`
       : "") +

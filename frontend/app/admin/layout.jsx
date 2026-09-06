@@ -11,6 +11,7 @@ const TITLES = {
   "/admin/registrations": "Registrations",
   "/admin/programs": "Programs",
   "/admin/company-profile": "Company Profile",
+  "/admin/newsletter": "Newsletter",
   "/admin/users": "Users",
   "/admin/activity": "Activity",
 };

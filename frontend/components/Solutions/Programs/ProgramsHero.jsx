@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Star } from "lucide-react";
 import BrochureModal from "./BrochureModal";
+import VideoAccessModal from "./VideoAccessModal";
 
 export default function ProgramsHero({ program }) {
   const {
@@ -13,11 +14,14 @@ export default function ProgramsHero({ program }) {
     banner,
     bannerAlt,
     brochure,
+    videoUrl,
     rating,
     reviews,
+    ratingEnabled,
   } = program;
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   return (
     <section className="bg-white py-12 sm:py-16 md:py-12 border-b border-slate-200">
@@ -37,7 +41,7 @@ export default function ProgramsHero({ program }) {
             </h1>
 
             {/* Rating */}
-            {rating != null && (
+            {rating != null && ratingEnabled !== false && (
               <div className="flex items-center gap-3">
                 <span className="text-2xl font-extrabold text-[#D52029] leading-none">
                   {Number(rating).toFixed(1)}
@@ -93,6 +97,25 @@ export default function ProgramsHero({ program }) {
               >
                 Schedule a Consultation
               </a>
+
+              {/* Gated programme video — opens the lead form, then plays the video */}
+              {videoUrl && (
+                <button
+                  type="button"
+                  onClick={() => setVideoModalOpen(true)}
+                  className="inline-flex items-center gap-3 group"
+                  aria-label="Watch programme video"
+                >
+                  <span className="relative shrink-0 w-12 h-12 rounded-full bg-[#D52029] group-hover:bg-red-700 flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-105">
+                    <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </span>
+                  <span className="text-sm font-bold text-[#414143] group-hover:text-[#D52029] transition-colors">
+                    Watch Programme Video
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -117,6 +140,15 @@ export default function ProgramsHero({ program }) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         brochure={brochure}
+        itemSlug={program?.slug || null}
+        itemTitle={title || null}
+      />
+
+      {/* Gated Video Modal */}
+      <VideoAccessModal
+        open={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        videoUrl={videoUrl}
         itemSlug={program?.slug || null}
         itemTitle={title || null}
       />

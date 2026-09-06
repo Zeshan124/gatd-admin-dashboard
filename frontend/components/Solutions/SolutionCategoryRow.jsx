@@ -65,7 +65,7 @@ export default function SolutionCategoryRow({ title, items }) {
                 )}
 
                 {/* Rating badge */}
-                {item.rating != null && (
+                {item.rating != null && item.ratingEnabled !== false && (
                   <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-md">
                     <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                     <span className="text-xs font-bold text-[#414143] leading-none">

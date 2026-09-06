@@ -28,10 +28,8 @@ export default function GATDHero() {
             </p>
 
             {/* Headline */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-bold text-[#414143] leading-[1.1] mb-8">
-              Aspire Higher and be
-              <br />
-              Inspired to Achieve
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-bold text-[#414143] leading-[1.1] mb-8">
+              Aspire Higher and be Inspired to Achieve
             </h1>
 
             {/* Hero video — mobile/tablet only: directly below the heading */}

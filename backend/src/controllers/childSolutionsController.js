@@ -51,6 +51,7 @@ function mapChild(r) {
     linkUrl: r.link_url,
     rating: r.rating != null ? Number(r.rating) : null,
     reviews: r.reviews,
+    ratingEnabled: r.rating_enabled == null ? true : !!r.rating_enabled,
     isActive: !!r.is_active,
     sortOrder: r.sort_order,
     programCount: r.program_count,
@@ -122,6 +123,7 @@ function collectColumns(body, { partial }) {
     if (Number.isNaN(n) || n < 0) fields.reviews = "reviews must be an integer ≥ 0";
     else cols.reviews = n;
   }
+  if (body.ratingEnabled !== undefined) cols.rating_enabled = body.ratingEnabled ? 1 : 0;
   if (body.isActive !== undefined) cols.is_active = body.isActive ? 1 : 0;
   if (body.isClickable !== undefined) cols.is_clickable = body.isClickable ? 1 : 0;
   if (body.linkUrl !== undefined) {
@@ -219,7 +221,7 @@ async function programmesProjection(childId, childSlug, { publishedOnly = false,
   if (activeOnly) conds.push("is_active = 1");
   if (publishedOnly) conds.push("is_published = 1");
   const rows = await query(
-    `SELECT slug, title, description, card_image, rating, reviews, is_published, is_clickable, link_url
+    `SELECT slug, title, description, card_image, rating, reviews, rating_enabled, is_published, is_clickable, link_url
        FROM solution_programs WHERE ${conds.join(" AND ")} ORDER BY sort_order ASC, title ASC`,
     params
   );
@@ -235,6 +237,7 @@ async function programmesProjection(childId, childSlug, { publishedOnly = false,
       image: p.card_image,
       rating: p.rating != null ? Number(p.rating) : null,
       reviews: p.reviews,
+      ratingEnabled: p.rating_enabled == null ? true : !!p.rating_enabled,
       isPublished: !!p.is_published,
       href, // null → non-clickable card
     };

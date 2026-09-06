@@ -385,6 +385,7 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [banner, setBanner] = useState(editing?.banner || null);
   const [cardImage, setCardImage] = useState(editing?.cardImage || null);
   const [brochure, setBrochure] = useState(editing?.brochure || null);
+  const [videoUrl, setVideoUrl] = useState(editing?.videoUrl || "");
 
   // pricing (price shown in major units, stored as cents)
   const [price, setPrice] = useState(editing?.priceCents != null ? String(editing.priceCents / 100) : "");
@@ -406,6 +407,7 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
 
   const [rating, setRating] = useState(editing?.rating != null ? String(editing.rating) : "");
   const [reviews, setReviews] = useState(editing?.reviews != null ? String(editing.reviews) : "");
+  const [ratingEnabled, setRatingEnabled] = useState(editing?.ratingEnabled ?? true);
   const [sortOrder, setSortOrder] = useState(editing?.sortOrder != null ? String(editing.sortOrder) : "0");
   const [active, setActive] = useState(editing?.isActive ?? true);
   const [published, setPublished] = useState(editing?.isPublished ?? true);
@@ -454,6 +456,7 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       banner: banner || null,
       cardImage: cardImage || null,
       brochure: brochure || null,
+      videoUrl: nn(videoUrl),
       currency: (currency || "SGD").toUpperCase(),
       pricingPeriod: nn(pricingPeriod),
       pricingHeading: nn(pricingHeading),
@@ -481,6 +484,7 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       sortOrder: Number(sortOrder) || 0,
       isActive: active,
       isPublished: published,
+      ratingEnabled,
       isClickable: clickable,
       linkUrl: clickable ? nn(linkUrl) : null,
     };
@@ -600,6 +604,14 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
           <MediaInput label="Card image" value={cardImage} onChange={setCardImage} />
           <MediaInput label="Brochure (PDF)" kind="pdf" value={brochure} onChange={setBrochure} />
         </div>
+        <TextField
+          label="Programme video URL"
+          value={videoUrl}
+          onChange={setVideoUrl}
+          error={fe.videoUrl}
+          placeholder="https://www.youtube.com/watch?v=…  or  /video/clip.mp4"
+          hint="Gated on the public Program page — visitors submit the lead form to watch. Leave blank to hide the video."
+        />
       </Section>
 
       <Section title="Pricing">
@@ -719,6 +731,13 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
           <NumberField label="Rating (0–5)" min={0} max={5} step="0.1" value={rating} onChange={setRating} error={fe.rating} />
           <NumberField label="Reviews count" min={0} value={reviews} onChange={setReviews} error={fe.reviews} />
         </div>
+        <Toggle
+          label="Show rating on website"
+          value={ratingEnabled}
+          onChange={setRatingEnabled}
+          onText="Shown"
+          offText="Hidden"
+        />
       </Section>
     </DrawerShell>
   );

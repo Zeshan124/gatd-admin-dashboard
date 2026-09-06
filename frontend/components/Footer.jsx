@@ -4,6 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+// Newsletter subscription endpoint — reuses the configured API base.
+const NEWSLETTER_API =
+  (process.env.NEXT_PUBLIC_ADMIN_API || "http://localhost:5000/apis") + "/newsletter";
+
 const quickLinks = [
   { label: "Home", href: "/" },
   { label: "About us", href: "/about" },
@@ -63,10 +67,43 @@ const socialLinks = [
 
 export default function Footer() {
   const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | submitting | success | error
+  const [errorMsg, setErrorMsg] = useState("");
+  const [honeypot, setHoneypot] = useState("");
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
-    setEmail("");
+    if (status === "submitting") return;
+    setStatus("submitting");
+    setErrorMsg("");
+    try {
+      const res = await fetch(NEWSLETTER_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          sourcePage: typeof window !== "undefined" ? window.location.pathname : "",
+          honeypot,
+        }),
+      });
+      if (res.status === 422) {
+        const json = await res.json().catch(() => ({}));
+        setErrorMsg(json?.error?.message || "Please enter a valid email address.");
+        setStatus("error");
+        return;
+      }
+      if (!res.ok && res.status !== 201) {
+        const json = await res.json().catch(() => ({}));
+        setErrorMsg(json?.error?.message || "Something went wrong. Please try again.");
+        setStatus("error");
+        return;
+      }
+      setEmail("");
+      setStatus("success");
+    } catch {
+      setErrorMsg("Unable to subscribe right now. Please try again later.");
+      setStatus("error");
+    }
   };
 
   return (
@@ -205,22 +242,47 @@ export default function Footer() {
               Subscribe our newsletter for latest updates
             </p>
 
-            <form onSubmit={handleSubscribe} className="space-y-3">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address..."
-                className="w-full px-4 py-3 bg-white text-slate-800 text-sm rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
-              />
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#D52029] hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                Subscribe
-              </button>
-            </form>
+            {status === "success" ? (
+              <div className="rounded-lg bg-white/10 border border-white/20 px-4 py-4 text-sm text-white/90">
+                <p className="font-semibold text-white mb-0.5">You&apos;re subscribed! 🎉</p>
+                Thanks for joining — we&apos;ll keep you posted with the latest updates.
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="space-y-3" noValidate>
+                {/* Honeypot: hidden from users; bots that fill it are silently dropped */}
+                <input
+                  type="text"
+                  name="company_website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  className="hidden"
+                />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (status === "error") setStatus("idle");
+                  }}
+                  placeholder="Enter your email address..."
+                  className="w-full px-4 py-3 bg-white text-slate-800 text-sm rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+                />
+                {status === "error" && errorMsg && (
+                  <p className="text-xs text-red-300">{errorMsg}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={status === "submitting"}
+                  className="w-full py-3 bg-[#D52029] hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  {status === "submitting" ? "Subscribing…" : "Subscribe"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

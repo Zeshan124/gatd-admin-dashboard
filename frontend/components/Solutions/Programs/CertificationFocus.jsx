@@ -127,9 +127,11 @@ export default function CertificationFocus({
           <div className="w-full flex flex-col gap-3">
             {(focusAreas || defaultFocusAreas).map((item, idx) => {
               const isRed = idx % 2 === 0;
+              // CMS-authored focus areas have no `id`; number them by position.
+              const number = item.id ?? idx + 1;
               return (
                 <div
-                  key={item.id}
+                  key={item.id ?? idx}
                   className="group flex items-center gap-4 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-50 hover:shadow-md"
                 >
                   {/* Left — icon + number stack */}
@@ -148,7 +150,7 @@ export default function CertificationFocus({
                         className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-md border-2 border-white"
                         style={{ background: isRed ? "#D52029" : "#1e2027" }}
                       >
-                        {item.id}
+                        {number}
                       </div>
                     </div>
                   </div>
@@ -162,7 +164,7 @@ export default function CertificationFocus({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${isRed ? "text-[#D52029]" : "text-slate-400"}`}>
-                        0{item.id}
+                        {String(number).padStart(2, "0")}
                       </span>
                       <div className={`flex-1 h-px ${isRed ? "bg-[#D52029]/20" : "bg-slate-100"}`} />
                     </div>

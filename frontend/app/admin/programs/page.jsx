@@ -385,6 +385,7 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
   const [audience, setAudience] = useState(Array.isArray(editing?.audience) ? editing.audience : []);
   const [rating, setRating] = useState(editing?.rating != null ? String(editing.rating) : "");
   const [reviews, setReviews] = useState(editing?.reviews != null ? String(editing.reviews) : "");
+  const [ratingEnabled, setRatingEnabled] = useState(editing?.ratingEnabled ?? true);
   const [sortOrder, setSortOrder] = useState(editing?.sortOrder != null ? String(editing.sortOrder) : "0");
   const [active, setActive] = useState(editing?.isActive ?? true);
   const [clickable, setClickable] = useState(editing?.isClickable ?? true);
@@ -428,6 +429,7 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
       audience: audience.filter((s) => s && s.trim()).map((s) => s.trim()),
       sortOrder: Number(sortOrder) || 0,
       isActive: active,
+      ratingEnabled,
       isClickable: clickable,
       linkUrl: clickable ? nn(linkUrl) : null,
     };
@@ -586,6 +588,13 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
           <NumberField label="Rating (0–5)" min={0} max={5} step="0.1" value={rating} onChange={setRating} error={fe.rating} />
           <NumberField label="Reviews count" min={0} value={reviews} onChange={setReviews} error={fe.reviews} />
         </div>
+        <Toggle
+          label="Show rating on website"
+          value={ratingEnabled}
+          onChange={setRatingEnabled}
+          onText="Shown"
+          offText="Hidden"
+        />
       </Section>
     </DrawerShell>
   );

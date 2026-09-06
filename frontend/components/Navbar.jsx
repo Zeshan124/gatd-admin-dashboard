@@ -27,6 +27,24 @@ const navLinks = [
   { label: "Contact", href: "/contact" },
 ];
 
+// Only same-site paths (/…) or http(s) URLs are treated as navigable; anything
+// else (or a null href from a non-clickable Program/Subprogram) renders as text.
+const SAFE_LINK_RE = /^(https?:\/\/|\/(?!\/))/i;
+const safeHref = (h) => (h && SAFE_LINK_RE.test(h) ? h : null);
+
+// A dropdown row: a real <Link> when it has a navigable href, otherwise plain,
+// non-clickable text (honours the admin "clickable" toggle for Programs/Subprograms).
+function NavRow({ href, onClick, className, children }) {
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return <span className={`${className} cursor-default`}>{children}</span>;
+}
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -78,8 +96,8 @@ export default function Navbar() {
     category: p.title,
     items: (p.items || []).map((c) => ({
       label: c.title,
-      href: c.href,
-      children: (c.children || []).map((s) => ({ label: s.title, href: s.href })),
+      href: safeHref(c.href),
+      children: (c.children || []).map((s) => ({ label: s.title, href: safeHref(s.href) })),
     })),
   }));
 
@@ -174,7 +192,7 @@ export default function Navbar() {
                                     }
                                     onMouseLeave={() => setHoveredItem(null)}
                                   >
-                                    <Link
+                                    <NavRow
                                       href={item.href}
                                       onClick={closeAll}
                                       className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-slate-700 hover:text-[#D52029] hover:bg-red-50 transition-colors group"
@@ -188,24 +206,26 @@ export default function Navbar() {
                                       {item.children?.length > 0 && (
                                         <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-[#D52029]" />
                                       )}
-                                    </Link>
+                                    </NavRow>
 
                                     {/* Level 3 — Children flyout */}
                                     {item.children?.length > 0 &&
                                       hoveredItem === item.label && (
                                         <div className="absolute left-full top-0 w-72 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 max-h-80 overflow-y-auto">
-                                          <div className="px-3 py-1.5 mb-1 border-b border-slate-100">
-                                            <Link
-                                              href={item.href}
-                                              onClick={closeAll}
-                                              className="text-xs font-bold text-[#D52029] uppercase tracking-wider hover:underline"
-                                            >
-                                              View All →
-                                            </Link>
-                                          </div>
+                                          {item.href && (
+                                            <div className="px-3 py-1.5 mb-1 border-b border-slate-100">
+                                              <Link
+                                                href={item.href}
+                                                onClick={closeAll}
+                                                className="text-xs font-bold text-[#D52029] uppercase tracking-wider hover:underline"
+                                              >
+                                                View All →
+                                              </Link>
+                                            </div>
+                                          )}
                                           {item.children.map((child, ci) => (
-                                            <Link
-                                              key={`${child.href}-${ci}`}
+                                            <NavRow
+                                              key={`${child.label}-${ci}`}
                                               href={child.href}
                                               onClick={closeAll}
                                               className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:text-[#D52029] hover:bg-red-50 transition-colors group"
@@ -214,7 +234,7 @@ export default function Navbar() {
                                               <span className="leading-snug">
                                                 {child.label}
                                               </span>
-                                            </Link>
+                                            </NavRow>
                                           ))}
                                         </div>
                                       )}
@@ -383,13 +403,13 @@ export default function Navbar() {
                                     {item.children?.length > 0 ? (
                                       <>
                                         <div className="flex items-center">
-                                          <Link
+                                          <NavRow
                                             href={item.href}
                                             onClick={() => setMobileOpen(false)}
                                             className="flex-1 px-3 py-2 text-xs text-slate-500 hover:text-[#D52029] hover:bg-red-50 rounded-lg transition-colors leading-snug"
                                           >
                                             {item.label}
-                                          </Link>
+                                          </NavRow>
                                           <button
                                             onClick={() =>
                                               setMobileItemOpen(
@@ -409,8 +429,8 @@ export default function Navbar() {
                                         {mobileItemOpen === item.label && (
                                           <div className="ml-4 pl-3 border-l-2 border-red-50 space-y-0.5 mb-1">
                                             {item.children.map((child, ci) => (
-                                              <Link
-                                                key={`${child.href}-${ci}`}
+                                              <NavRow
+                                                key={`${child.label}-${ci}`}
                                                 href={child.href}
                                                 onClick={() =>
                                                   setMobileOpen(false)
@@ -418,19 +438,19 @@ export default function Navbar() {
                                                 className="block px-3 py-2 text-xs text-slate-400 hover:text-[#D52029] hover:bg-red-50 rounded-lg transition-colors"
                                               >
                                                 {child.label}
-                                              </Link>
+                                              </NavRow>
                                             ))}
                                           </div>
                                         )}
                                       </>
                                     ) : (
-                                      <Link
+                                      <NavRow
                                         href={item.href}
                                         onClick={() => setMobileOpen(false)}
                                         className="block px-3 py-2 text-xs text-slate-500 hover:text-[#D52029] hover:bg-red-50 rounded-lg transition-colors"
                                       >
                                         {item.label}
-                                      </Link>
+                                      </NavRow>
                                     )}
                                   </div>
                                 ))}

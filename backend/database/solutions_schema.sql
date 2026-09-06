@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS child_solutions (
   link_url            VARCHAR(500) NULL,                 -- custom link; empty → /solutions/<slug>
   rating              DECIMAL(2,1) NULL,
   reviews             INT          NOT NULL DEFAULT 0,
+  rating_enabled      TINYINT(1)   NOT NULL DEFAULT 1,   -- show the rating on the public site?
   is_active           TINYINT(1)   NOT NULL DEFAULT 1,
   sort_order          INT          NOT NULL DEFAULT 0,
   delete_status       TINYINT(1)   NOT NULL DEFAULT 0,
@@ -87,12 +88,14 @@ CREATE TABLE IF NOT EXISTS solution_programs (
   subtext              TEXT         NULL,
   rating               DECIMAL(2,1) NULL,
   reviews              INT          NOT NULL DEFAULT 0,
+  rating_enabled       TINYINT(1)   NOT NULL DEFAULT 1,   -- show the rating on the public site?
   price_cents          INT          NULL,
   currency             CHAR(3)      NOT NULL DEFAULT 'SGD',
   pricing_period       VARCHAR(40)  NULL,
   pricing_heading      VARCHAR(120) NULL,
   pricing_description  TEXT         NULL,
   brochure             VARCHAR(500) NULL,
+  video_url            VARCHAR(500) NULL,                 -- gated program video (YouTube/Vimeo/MP4 URL)
   is_clickable         TINYINT(1)   NOT NULL DEFAULT 1,   -- does the programme card link out?
   link_url             VARCHAR(500) NULL,                 -- custom link; empty → /solutions/<child>/<slug>
   registration_heading VARCHAR(255) NULL,

@@ -82,7 +82,7 @@ const solutions = [
     badge: "Solutions",
     title: "Global Conferences",
     description:
-      "At Global ATD, we transform ideas into impactful experiences through strategically designed and flawlessly executed events. Whether it’s engaging key stakeholders, celebrating milestones, or unveiling new initiatives, our expert event management team ensures every element aligns with your objectives and delivers measurable results.",
+      "Global ATD curates and delivers world-class conferences that unite visionary leaders, innovators, policymakers, and change-makers to shape the future of business, leadership, and society. Designed as dynamic platforms for strategic dialogue and collaboration, our conferences foster global connections and generate actionable insights that drive progress and transformation. Each conference is meticulously crafted to address critical global challenges, spotlight emerging trends, and inspire forward-thinking leadership across industries. By bringing together diverse voices and perspectives, Global ATD’s conferences create opportunities for knowledge exchange, networking, and strategic partnerships—empowering participants to lead with vision, innovate with purpose, and contribute meaningfully to global growth and development.",
     image: "/images/solutions/Event-Management/7.jpg",
     href: "/solutions/event-management",
   },
@@ -92,7 +92,7 @@ const solutions = [
     badge: "Solutions",
     title: "Industry Specific",
     description:
-      "At Global ATD, we transform ideas into impactful experiences through strategically designed and flawlessly executed events. Whether it’s engaging key stakeholders, celebrating milestones, or unveiling new initiatives, our expert event management team ensures every element aligns with your objectives and delivers measurable results.",
+      "GATD designs specialised training solutions for key industries such as finance, healthcare, education, technology, and public service. Each program is tailored to current market realities and future trends, equipping participants with relevant skills and insights to thrive in their sector.",
     image: "/images/solutions/Event-Management/7.jpg",
     href: "/solutions/event-management",
   },
@@ -121,13 +121,14 @@ export default function OurSolutions() {
         </div>
 
         {/* Tab Bar */}
-        <div className="flex items-end gap-0 border-b border-slate-200 mb-10 overflow-x-auto scrollbar-hide">
-          <div className="flex items-start gap-0 flex-1 min-w-0">
+        <div className="flex items-end gap-3 lg:gap-4 border-b border-slate-200 mb-10">
+          {/* Scrollable tabs — clip & scroll within their own box */}
+          <div className="flex items-start gap-0 flex-1 min-w-0 overflow-x-auto scrollbar-hide">
             {solutions.map((s) => (
               <button
                 key={s.id}
                 onClick={() => setActiveId(s.id)}
-                className={`relative shrink-0 px-4 py-3 text-sm text-left leading-snug transition-colors duration-200 max-w-[140px] ${
+                className={`relative shrink-0 px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-left leading-snug transition-colors duration-200 w-28 sm:w-auto sm:max-w-[140px] ${
                   activeId === s.id
                     ? "font-bold text-[#414143]"
                     : "font-medium text-slate-500 hover:text-slate-800"
@@ -141,8 +142,8 @@ export default function OurSolutions() {
             ))}
           </div>
 
-          {/* View All — desktop only */}
-          <div className="hidden lg:block shrink-0 pb-2 pl-4">
+          {/* View All — desktop only, reserves its own space so tabs never slide under it */}
+          <div className="hidden lg:block shrink-0 pb-2">
             <Link
               href="/solutions"
               className="inline-flex items-center justify-center px-5 py-2.5 bg-[#D52029] hover:bg-red-700 text-white text-sm font-bold rounded-md transition-all duration-200 whitespace-nowrap"

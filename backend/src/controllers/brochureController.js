@@ -6,7 +6,7 @@ const { sendBrochureEmails } = require("../utils/brochureEmails");
 const EXPORT_MAX_ROWS = 100000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_RE = /^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u;
-const SOURCE_TYPES = ["solution", "program", "company_profile"];
+const SOURCE_TYPES = ["solution", "program", "company_profile", "video"];
 const BROCHURE_STATUSES = ["new", "contacted", "archived"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -129,6 +129,42 @@ function buildFilters(q) {
     conditions.push("source_type = ?");
     params.push(String(q.sourceType));
   }
+  // Catalog filters (populated from the CMS). A brochure lead's item_slug is a
+  // child_solution slug (type 'solution') or a solution_program slug (type
+  // 'program'/'video'); resolve the hierarchy so each level narrows correctly.
+  //   Solution filter    → parent_solutions.slug
+  //   Program filter     → child_solutions.slug
+  //   Sub Program filter → solution_programs.slug
+  if (q.solution) {
+    conditions.push(
+      `(
+        (source_type = 'solution' AND item_slug IN (
+          SELECT c.slug FROM child_solutions c JOIN parent_solutions p ON p.id = c.parent_solution_id
+          WHERE p.slug = ? AND c.delete_status = 0))
+        OR (source_type IN ('program','video') AND item_slug IN (
+          SELECT sp.slug FROM solution_programs sp
+            JOIN child_solutions c ON c.id = sp.child_solution_id
+            JOIN parent_solutions p ON p.id = c.parent_solution_id
+          WHERE p.slug = ? AND sp.delete_status = 0))
+      )`
+    );
+    params.push(String(q.solution), String(q.solution));
+  }
+  if (q.program) {
+    conditions.push(
+      `(
+        (source_type = 'solution' AND item_slug = ?)
+        OR (source_type IN ('program','video') AND item_slug IN (
+          SELECT sp.slug FROM solution_programs sp JOIN child_solutions c ON c.id = sp.child_solution_id
+          WHERE c.slug = ? AND sp.delete_status = 0))
+      )`
+    );
+    params.push(String(q.program), String(q.program));
+  }
+  if (q.subprogram) {
+    conditions.push("(source_type IN ('program','video') AND item_slug = ?)");
+    params.push(String(q.subprogram));
+  }
   if (q.status) {
     const statuses = String(q.status).split(",").map((s) => s.trim()).filter(Boolean);
     if (statuses.length) {
@@ -182,6 +218,40 @@ async function listLeads(req, res) {
   }
 }
 
+/**
+ * GET /apis/brochure-leads/facets   (admin, requires token)
+ * The full CMS catalog for the filter dropdowns: all Solutions (parent_solutions),
+ * Programs (child_solutions) and Sub Programs (solution_programs). Each Program/
+ * Sub Program carries its parent slug so the UI can cascade if desired.
+ */
+async function facets(req, res) {
+  try {
+    const solutions = await query(
+      `SELECT slug, title FROM parent_solutions WHERE delete_status = 0 ORDER BY sort_order ASC, title ASC`
+    );
+    const programs = await query(
+      `SELECT c.slug, c.title, p.slug AS solution_slug
+         FROM child_solutions c LEFT JOIN parent_solutions p ON p.id = c.parent_solution_id
+        WHERE c.delete_status = 0 ORDER BY c.sort_order ASC, c.title ASC`
+    );
+    const subprograms = await query(
+      `SELECT sp.slug, sp.title, c.slug AS program_slug
+         FROM solution_programs sp LEFT JOIN child_solutions c ON c.id = sp.child_solution_id
+        WHERE sp.delete_status = 0 ORDER BY sp.sort_order ASC, sp.title ASC`
+    );
+    return res.json({
+      data: {
+        solutions: solutions.map((r) => ({ slug: r.slug, label: r.title || r.slug })),
+        programs: programs.map((r) => ({ slug: r.slug, title: r.title || r.slug, solutionSlug: r.solution_slug })),
+        subprograms: subprograms.map((r) => ({ slug: r.slug, title: r.title || r.slug, programSlug: r.program_slug })),
+      },
+    });
+  } catch (err) {
+    console.error("[brochure] facets error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not load filters");
+  }
+}
+
 /** GET /apis/brochure-leads/:id  (admin) */
 async function getLead(req, res) {
   try {
@@ -224,7 +294,7 @@ const EXPORT_COLUMNS = [
   { header: "Organisation", key: "organization", width: 24 },
   { header: "Type", key: "source_type", width: 12 },
   { header: "Item", key: "item_title", width: 34 },
-  { header: "Brochure", key: "brochure", width: 30 },
+  { header: "File / Link", key: "brochure", width: 30 },
   { header: "Status", key: "status", width: 12 },
   { header: "Spam", key: "spam", width: 8, value: (r) => (r.is_spam ? "Yes" : "No") },
   { header: "Source Page", key: "source_page", width: 24 },
@@ -298,4 +368,4 @@ async function deleteLead(req, res) {
   }
 }
 
-module.exports = { createLead, listLeads, getLead, updateLead, deleteLead, exportLeads, BROCHURE_STATUSES, SOURCE_TYPES };
+module.exports = { createLead, listLeads, facets, getLead, updateLead, deleteLead, exportLeads, BROCHURE_STATUSES, SOURCE_TYPES };

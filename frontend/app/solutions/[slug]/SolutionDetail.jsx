@@ -88,7 +88,9 @@ export default function SolutionDetail() {
   }
 
   return (
-    <main>
+    // overflow-x-clip prevents a stray decorative/edge element in any section from
+    // making the whole page scroll sideways on mobile (clip = no scroll-container side effects).
+    <main className="overflow-x-clip">
       {solution.parentSlug && (
         <div className="bg-white border-b border-slate-100">
           <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-16 xl:px-24 py-3">

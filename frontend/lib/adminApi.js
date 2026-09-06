@@ -202,10 +202,60 @@ export const contactApi = {
   },
 };
 
+// ── Newsletter subscribers ───────────────────────────────────────────────────
+export const newsletterApi = {
+  /** List with search/status/pagination → { data: [...], meta: {...} } */
+  list: (params) => request("/newsletter", { params }),
+  /** Single subscriber → { data: {...} } */
+  get: (id) => request(`/newsletter/${id}`),
+  /** Update subscriber info (email/name/status) → { data: {...} } */
+  update: (id, body) => request(`/newsletter/${id}`, { method: "PATCH", body }),
+  /** Soft-delete a subscriber */
+  remove: (id) => request(`/newsletter/${id}`, { method: "DELETE" }),
+  /** Download export honoring the same filters as the list. Returns { blob, filename }. */
+  exportFile: async (params = {}) => {
+    const url = `${API_BASE}/newsletter/export${toQuery(params)}`;
+    let res;
+    try {
+      res = await fetch(url, { headers: { ...authHeaders() } });
+    } catch (e) {
+      const err = new Error("Unable to reach the API. Is the backend running at " + API_BASE + "?");
+      err.status = 0;
+      throw err;
+    }
+    if (!res.ok) {
+      if (res.status === 401 && typeof window !== "undefined") {
+        window.localStorage.removeItem("gatd_admin_token");
+        window.localStorage.removeItem("gatd_admin_user");
+        if (!window.location.pathname.startsWith("/admin/login")) {
+          window.location.assign("/admin/login");
+        }
+      }
+      let msg = `Export failed (${res.status})`;
+      try {
+        const j = await res.json();
+        msg = j?.error?.message || msg;
+      } catch {
+        /* non-JSON error body */
+      }
+      const err = new Error(msg);
+      err.status = res.status;
+      throw err;
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get("Content-Disposition") || "";
+    const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+    const filename = match ? decodeURIComponent(match[1]) : `newsletter.${params.format === "csv" ? "csv" : "xlsx"}`;
+    return { blob, filename };
+  },
+};
+
 // ── Brochure leads ───────────────────────────────────────────────────────────
 export const brochuresApi = {
-  /** List with filters (sourceType, status, q, page, pageSize) → { data, meta } */
+  /** List with filters (sourceType, solution, program, status, q, dates, page) → { data, meta } */
   list: (params) => request("/brochure-leads", { params }),
+  /** Distinct Solutions/Programs for the filter dropdowns → { data: { solutions, programs } } */
+  facets: () => request("/brochure-leads/facets"),
   /** Single lead → { data: {...} } */
   get: (id) => request(`/brochure-leads/${id}`),
   /** Update status (new | contacted | archived) → { data: {...} } */

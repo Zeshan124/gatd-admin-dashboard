@@ -17,6 +17,8 @@ function hashString(str) {
   return h;
 }
 function getRating(prog) {
+  // Admin can hide a subprogram's rating from the public site.
+  if (prog.ratingEnabled === false) return { rating: null, reviews: null };
   if (prog.rating != null) {
     return { rating: prog.rating, reviews: prog.reviews };
   }

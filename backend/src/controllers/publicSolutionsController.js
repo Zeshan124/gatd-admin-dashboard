@@ -18,7 +18,7 @@ async function catalog(req, res) {
     );
     const children = await query(
       `SELECT c.parent_solution_id, c.slug, c.title, c.description, c.eyebrow, c.card_image,
-              c.rating, c.reviews, c.is_clickable, c.link_url
+              c.rating, c.reviews, c.rating_enabled, c.is_clickable, c.link_url
          FROM child_solutions c JOIN parent_solutions p ON p.id = c.parent_solution_id
         WHERE c.is_active = 1 AND c.delete_status = 0 AND p.is_active = 1 AND p.delete_status = 0
         ORDER BY c.sort_order ASC, c.title ASC`
@@ -30,6 +30,7 @@ async function catalog(req, res) {
       const item = {
         slug: c.slug, title: c.title, description: c.description, eyebrow: c.eyebrow,
         cardImage: c.card_image, rating: c.rating != null ? Number(c.rating) : null, reviews: c.reviews,
+        ratingEnabled: c.rating_enabled == null ? true : !!c.rating_enabled,
         // Admin-controlled: whether the card links out, and to where.
         clickable,
         href: clickable ? (c.link_url || `/solutions/${c.slug}`) : null,
@@ -58,13 +59,13 @@ async function menu(req, res) {
         WHERE is_active = 1 AND delete_status = 0 ORDER BY sort_order ASC, title ASC`
     );
     const children = await query(
-      `SELECT c.id, c.parent_solution_id, c.slug, c.title
+      `SELECT c.id, c.parent_solution_id, c.slug, c.title, c.is_clickable, c.link_url
          FROM child_solutions c JOIN parent_solutions p ON p.id = c.parent_solution_id
         WHERE c.is_active = 1 AND c.delete_status = 0 AND p.is_active = 1 AND p.delete_status = 0
         ORDER BY c.sort_order ASC, c.title ASC`
     );
     const programs = await query(
-      `SELECT sp.child_solution_id, sp.slug, sp.title, c.slug AS child_slug
+      `SELECT sp.child_solution_id, sp.slug, sp.title, sp.is_clickable, sp.link_url, c.slug AS child_slug
          FROM solution_programs sp
          JOIN child_solutions c ON c.id = sp.child_solution_id
          JOIN parent_solutions p ON p.id = c.parent_solution_id
@@ -74,13 +75,16 @@ async function menu(req, res) {
         ORDER BY sp.sort_order ASC, sp.title ASC`
     );
 
+    // Respect the admin "clickable" setting: a non-clickable Program/Subprogram
+    // gets href = null so the header renders it as plain text (not a link).
     const progsByChild = new Map();
     for (const sp of programs) {
       if (!progsByChild.has(sp.child_solution_id)) progsByChild.set(sp.child_solution_id, []);
       progsByChild.get(sp.child_solution_id).push({
         slug: sp.slug,
         title: sp.title,
-        href: `/solutions/${sp.child_slug}/${sp.slug}`,
+        // menu query already filters to published+active, so its own page exists.
+        href: sp.is_clickable ? (sp.link_url || `/solutions/${sp.child_slug}/${sp.slug}`) : null,
       });
     }
     const childrenByParent = new Map();
@@ -89,7 +93,7 @@ async function menu(req, res) {
       childrenByParent.get(c.parent_solution_id).push({
         slug: c.slug,
         title: c.title,
-        href: `/solutions/${c.slug}`,
+        href: c.is_clickable ? (c.link_url || `/solutions/${c.slug}`) : null,
         children: progsByChild.get(c.id) || [],
       });
     }
@@ -117,7 +121,7 @@ async function parent(req, res) {
     if (!parents[0]) return sendError(res, 404, "NOT_FOUND", "Solution not found");
 
     const children = await query(
-      `SELECT slug, title, description, eyebrow, card_image, rating, reviews FROM child_solutions
+      `SELECT slug, title, description, eyebrow, card_image, rating, reviews, rating_enabled FROM child_solutions
         WHERE parent_solution_id = ? AND is_active = 1 AND delete_status = 0 ORDER BY sort_order ASC, title ASC`,
       [parents[0].id]
     );
@@ -127,6 +131,7 @@ async function parent(req, res) {
         children: children.map((c) => ({
           slug: c.slug, title: c.title, description: c.description, eyebrow: c.eyebrow,
           cardImage: c.card_image, rating: c.rating != null ? Number(c.rating) : null, reviews: c.reviews,
+          ratingEnabled: c.rating_enabled == null ? true : !!c.rating_enabled,
         })),
       },
     });
