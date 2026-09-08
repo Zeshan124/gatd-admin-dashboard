@@ -2,6 +2,7 @@ const ExcelJS = require("exceljs");
 const { query } = require("../config/db");
 const { sendError } = require("../utils/http");
 const { sendBrochureEmails } = require("../utils/brochureEmails");
+const { scoreSubmission } = require("../utils/spamFilter");
 
 const EXPORT_MAX_ROWS = 100000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -75,23 +76,39 @@ async function createLead(req, res) {
     const ip = (req.ip || "").slice(0, 45) || null;
     const userAgent = (req.headers["user-agent"] || "").toString() || null;
 
+    // --- Spam heuristics: MARK (not reject) suspicious leads; skip their emails. ---
+    const sc = scoreSubmission({ name: value.name, email: value.email, organization: value.organization });
+    let isSpam = sc.spam;
+    if (!isSpam) {
+      const dup = await query(
+        `SELECT COUNT(*) AS n FROM brochure_leads
+          WHERE delete_status = 0 AND created_at > (NOW() - INTERVAL 1 DAY) AND email = ?`,
+        [value.email]
+      );
+      if (dup[0].n >= 8) isSpam = true; // downloads recur as a visitor browses; higher bar
+    }
+    if (isSpam) console.warn(`[brochure] flagged spam (${sc.reasons.join(", ") || "repeated"}) from ${value.email}`);
+
     const result = await query(
       `INSERT INTO brochure_leads
          (source_type, item_slug, item_title, brochure, name, email, country, organization,
           status, source_page, ip_address, user_agent, is_spam)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, 0)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?)`,
       [
         value.sourceType, value.itemSlug, value.itemTitle, value.brochure,
         value.name, value.email, value.country, value.organization,
-        value.sourcePage, ip, userAgent,
+        value.sourcePage, ip, userAgent, isSpam ? 1 : 0,
       ]
     );
 
     // Fire-and-forget: confirm to the visitor + notify brochure@globalatd.com.
     // Never blocks or fails the request (sendBrochureEmails swallows all errors).
-    sendBrochureEmails({ value }).catch((e) =>
-      console.error("[brochure] email error:", e && e.message)
-    );
+    // Skip for spam-flagged leads so bots don't trigger emails.
+    if (!isSpam) {
+      sendBrochureEmails({ value }).catch((e) =>
+        console.error("[brochure] email error:", e && e.message)
+      );
+    }
 
     return res.status(201).json({ data: { id: result.insertId, received: true } });
   } catch (err) {
@@ -138,7 +155,7 @@ function buildFilters(q) {
   if (q.solution) {
     conditions.push(
       `(
-        (source_type = 'solution' AND item_slug IN (
+        (source_type IN ('solution','video') AND item_slug IN (
           SELECT c.slug FROM child_solutions c JOIN parent_solutions p ON p.id = c.parent_solution_id
           WHERE p.slug = ? AND c.delete_status = 0))
         OR (source_type IN ('program','video') AND item_slug IN (
@@ -153,7 +170,7 @@ function buildFilters(q) {
   if (q.program) {
     conditions.push(
       `(
-        (source_type = 'solution' AND item_slug = ?)
+        (source_type IN ('solution','video') AND item_slug = ?)
         OR (source_type IN ('program','video') AND item_slug IN (
           SELECT sp.slug FROM solution_programs sp JOIN child_solutions c ON c.id = sp.child_solution_id
           WHERE c.slug = ? AND sp.delete_status = 0))

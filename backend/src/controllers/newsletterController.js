@@ -2,6 +2,7 @@ const ExcelJS = require("exceljs");
 const { query } = require("../config/db");
 const { sendError } = require("../utils/http");
 const { sendMail } = require("../utils/mailer");
+const { isDisposableEmail } = require("../utils/spamFilter");
 
 const EXPORT_MAX_ROWS = 100000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -82,6 +83,10 @@ async function createSubscription(req, res) {
       return sendError(res, 422, "VALIDATION_ERROR", "Please enter a valid email address", {
         email: "Must be a valid email address",
       });
+    }
+    // Silently accept-and-drop disposable/throwaway addresses (email-only form).
+    if (isDisposableEmail(email)) {
+      return res.status(201).json({ data: { received: true } });
     }
     const name = cleanStr(req.body.name);
     const value = {

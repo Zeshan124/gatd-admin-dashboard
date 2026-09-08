@@ -47,6 +47,7 @@ function mapChild(r) {
     audienceImage: r.audience_image,
     audience: parseJson(r.audience),
     brochure: r.brochure,
+    videoUrl: r.video_url,
     isClickable: !!r.is_clickable,
     linkUrl: r.link_url,
     rating: r.rating != null ? Number(r.rating) : null,
@@ -131,6 +132,12 @@ function collectColumns(body, { partial }) {
     if (!u) cols.link_url = null;
     else if (!SAFE_LINK_RE.test(u)) fields.linkUrl = "Link URL must be a relative path (/…) or an http(s):// URL";
     else cols.link_url = u;
+  }
+  if (body.videoUrl !== undefined) {
+    const u = body.videoUrl == null ? "" : String(body.videoUrl).trim();
+    if (!u) cols.video_url = null;
+    else if (!SAFE_LINK_RE.test(u)) fields.videoUrl = "Video URL must be a relative path (/…) or an http(s):// URL";
+    else cols.video_url = u;
   }
   if (body.sortOrder !== undefined) {
     const n = parseInt(body.sortOrder, 10);

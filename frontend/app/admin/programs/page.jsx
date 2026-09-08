@@ -374,6 +374,7 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
   const [whyImage, setWhyImage] = useState(editing?.whyImage || null);
   const [audienceImage, setAudienceImage] = useState(editing?.audienceImage || null);
   const [brochure, setBrochure] = useState(editing?.brochure || null);
+  const [videoUrl, setVideoUrl] = useState(editing?.videoUrl || "");
 
   const [programmesHeading, setProgrammesHeading] = useState(editing?.programmesHeading || "");
   const [gainsHeading, setGainsHeading] = useState(editing?.gainsHeading || "");
@@ -417,6 +418,7 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
       whyImage: whyImage || null,
       audienceImage: audienceImage || null,
       brochure: brochure || null,
+      videoUrl: nn(videoUrl),
       programmesHeading: nn(programmesHeading),
       gainsHeading: nn(gainsHeading),
       gains: gains
@@ -549,6 +551,14 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
           <MediaInput label="Map image" value={mapImage} onChange={setMapImage} />
           <MediaInput label="Brochure (PDF)" kind="pdf" value={brochure} onChange={setBrochure} />
         </div>
+        <TextField
+          label="Programme video URL"
+          value={videoUrl}
+          onChange={setVideoUrl}
+          error={fe.videoUrl}
+          placeholder="https://www.youtube.com/watch?v=…  or  /video/clip.mp4"
+          hint="Gated on the public Program page — visitors submit the lead form to watch. Leave blank to hide the video."
+        />
       </Section>
 
       <Section title="What you'll gain">

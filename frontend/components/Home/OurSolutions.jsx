@@ -102,6 +102,11 @@ export default function OurSolutions() {
   const [activeId, setActiveId] = useState(solutions[0].id);
   const active = solutions.find((s) => s.id === activeId);
 
+  // Deep-link "Explore More" to this solution's own section on the /solutions page
+  // (pre-filtered + scrolled there), rather than the general Solutions page.
+  const exploreSlug = (active.href || "").replace(/^\/solutions\/?/, "").replace(/\/+$/, "");
+  const exploreHref = exploreSlug ? `/solutions?category=${encodeURIComponent(exploreSlug)}` : "/solutions";
+
   return (
     <section className="bg-white py-12 sm:py-16 md:py-20">
       <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-16 xl:px-24">
@@ -167,7 +172,7 @@ export default function OurSolutions() {
               {active.description}
             </p>
             <Link
-              href="/solutions"
+              href={exploreHref}
               className="inline-flex items-center justify-center self-start px-6 py-3 bg-[#D52029] hover:bg-red-700 text-white text-sm font-bold rounded-md transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
               Explore More

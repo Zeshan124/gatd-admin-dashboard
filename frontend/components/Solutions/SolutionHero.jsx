@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import SolutionBrochureModal from "./SolutionBrochureModal";
+import VideoAccessModal from "./Programs/VideoAccessModal";
 
 export default function SolutionHero({ solution }) {
   const {
@@ -13,9 +14,11 @@ export default function SolutionHero({ solution }) {
     bannerAlt,
     subheading,
     subtext,
+    videoUrl,
   } = solution;
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   return (
     <section className="bg-white py-12 sm:py-16 md:py-16 border-b border-slate-200">
@@ -38,7 +41,7 @@ export default function SolutionHero({ solution }) {
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
               {description}
             </p>
-            <div>
+            <div className="flex flex-wrap items-center gap-4">
               <button
                 onClick={() => setModalOpen(true)}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#D52029] hover:bg-red-700 text-white text-sm font-bold rounded-full transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
@@ -50,6 +53,25 @@ export default function SolutionHero({ solution }) {
                 </span>
                 Download Programme Brochure
               </button>
+
+              {/* Gated programme video — opens the lead form, then plays the video */}
+              {videoUrl && (
+                <button
+                  type="button"
+                  onClick={() => setVideoModalOpen(true)}
+                  className="inline-flex items-center gap-3 group"
+                  aria-label="Watch programme video"
+                >
+                  <span className="relative shrink-0 w-12 h-12 rounded-full bg-[#D52029] group-hover:bg-red-700 flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-105">
+                    <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </span>
+                  <span className="text-sm font-bold text-[#414143] group-hover:text-[#D52029] transition-colors">
+                    Watch Programme Video
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -90,6 +112,15 @@ export default function SolutionHero({ solution }) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         brochure={solution.brochure}
+        itemSlug={solution?.slug || null}
+        itemTitle={title || null}
+      />
+
+      {/* Gated Video Modal */}
+      <VideoAccessModal
+        open={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        videoUrl={videoUrl}
         itemSlug={solution?.slug || null}
         itemTitle={title || null}
       />

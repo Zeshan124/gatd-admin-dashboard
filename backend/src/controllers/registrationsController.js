@@ -5,6 +5,7 @@ const { formatMoney } = require("../utils/money");
 const { nextReferenceNo } = require("../utils/reference");
 const { sendError } = require("../utils/http");
 const { sendRegistrationEmails } = require("../utils/registrationEmails");
+const { scoreSubmission } = require("../utils/spamFilter");
 
 // Window (minutes) within which an identical resubmission is treated as a
 // duplicate and returns the existing reference instead of creating a new row.
@@ -124,6 +125,15 @@ async function createRegistration(req, res) {
     const userAgent = (req.headers["user-agent"] || "").toString() || null;
     const year = new Date().getUTCFullYear();
 
+    // Spam heuristics — mark (not reject); spam-flagged registrations skip emails.
+    const sc = scoreSubmission({
+      name: [value.firstName, value.lastName].filter(Boolean).join(" "),
+      email: value.email,
+      organization: value.organization,
+    });
+    const isSpam = sc.spam;
+    if (isSpam) console.warn(`[registrations] flagged spam (${sc.reasons.join(", ")}) from ${value.email}`);
+
     // 6) Persist atomically: reference number + registration + line items.
     const referenceNo = await withTransaction(async (tx) => {
       const ref = await nextReferenceNo(tx, year);
@@ -134,7 +144,7 @@ async function createRegistration(req, res) {
             phone_number, country, designation, organization, hear_about_us,
             currency, total_amount_cents, status,
             source_page, utm_source, utm_medium, utm_campaign, ip_address, user_agent, is_spam)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, 0)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?)`,
         [
           ref,
           value.firstName,
@@ -155,6 +165,7 @@ async function createRegistration(req, res) {
           value.utm.campaign,
           ip,
           userAgent,
+          isSpam ? 1 : 0,
         ]
       );
       const registrationId = result.insertId;
@@ -173,14 +184,17 @@ async function createRegistration(req, res) {
 
     // 7) Fire the confirmation + internal-notification emails. Best-effort and
     // fire-and-forget: never block or fail the response on email trouble.
-    sendRegistrationEmails({
-      value,
-      dialCode,
-      referenceNo,
-      programs,
-      currency,
-      totalAmountCents,
-    }).catch((err) => console.error("[registrations] email error:", err));
+    // Spam-flagged submissions are saved (hidden) but don't trigger emails.
+    if (!isSpam) {
+      sendRegistrationEmails({
+        value,
+        dialCode,
+        referenceNo,
+        programs,
+        currency,
+        totalAmountCents,
+      }).catch((err) => console.error("[registrations] email error:", err));
+    }
 
     return res.status(201).json(
       publicPayload({

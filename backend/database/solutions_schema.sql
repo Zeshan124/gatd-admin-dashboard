@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS child_solutions (
   audience_image      VARCHAR(500) NULL,
   audience            JSON         NULL,
   brochure            VARCHAR(500) NULL,
+  video_url           VARCHAR(500) NULL,                 -- gated program video (YouTube/Vimeo/MP4 URL)
   is_clickable        TINYINT(1)   NOT NULL DEFAULT 1,   -- does the /solutions card link out?
   link_url            VARCHAR(500) NULL,                 -- custom link; empty → /solutions/<slug>
   rating              DECIMAL(2,1) NULL,

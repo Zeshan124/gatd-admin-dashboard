@@ -2,6 +2,7 @@ const ExcelJS = require("exceljs");
 const { query } = require("../config/db");
 const { dialCodeFor, isSupportedCountry } = require("../utils/countries");
 const { sendError } = require("../utils/http");
+const { scoreSubmission } = require("../utils/spamFilter");
 
 const EXPORT_MAX_ROWS = 100000;
 
@@ -85,14 +86,40 @@ async function createContact(req, res) {
     const ip = (req.ip || "").slice(0, 45) || null;
     const userAgent = (req.headers["user-agent"] || "").toString() || null;
 
+    // --- Spam heuristics: MARK (not reject) so nothing genuine is ever lost. ---
+    const sc = scoreSubmission({
+      name: value.firstName, email: value.email, subject: value.subject, message: value.message,
+    });
+    let isSpam = sc.spam;
+    let spamReason = sc.reasons.join(", ");
+
+    // Time-trap: a human takes a few seconds to fill the form; instant submits are bots.
+    const renderedAt = parseInt(req.body.renderedAt, 10);
+    if (!isSpam && Number.isFinite(renderedAt)) {
+      const elapsed = Date.now() - renderedAt;
+      if (elapsed >= 0 && elapsed < 3000) { isSpam = true; spamReason = "submitted too fast"; }
+    }
+
+    // Duplicate throttle: several recent submissions from the same email/phone = spam.
+    if (!isSpam) {
+      const dup = await query(
+        `SELECT COUNT(*) AS n FROM contact_messages
+          WHERE delete_status = 0 AND created_at > (NOW() - INTERVAL 1 DAY)
+            AND (email = ? OR (phone_number IS NOT NULL AND phone_number = ?))`,
+        [value.email, value.phoneNumber]
+      );
+      if (dup[0].n >= 3) { isSpam = true; spamReason = "repeated submissions"; }
+    }
+    if (isSpam) console.warn(`[contact] flagged spam (${spamReason || "heuristic"}) from ${value.email}`);
+
     const result = await query(
       `INSERT INTO contact_messages
          (first_name, email, phone_country, phone_dial_code, phone_number, subject, message,
           status, source_page, ip_address, user_agent, is_spam)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, 0)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?)`,
       [
         value.firstName, value.email, value.phoneCountry, value.phoneDialCode, value.phoneNumber,
-        value.subject, value.message, value.sourcePage, ip, userAgent,
+        value.subject, value.message, value.sourcePage, ip, userAgent, isSpam ? 1 : 0,
       ]
     );
 

@@ -46,6 +46,9 @@ export default function FeelFree() {
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState("");
   const [honeypot, setHoneypot] = useState("");
+  // Time-trap: when the form was rendered. Bots submit near-instantly; the server
+  // flags submissions that arrive within a few seconds as spam.
+  const [renderedAt] = useState(() => Date.now());
 
   const selectedCountry = countries.find((c) => c.code === dialCode) || countries[0];
   const filtered = countries.filter(
@@ -69,6 +72,7 @@ export default function FeelFree() {
       message: form.message.trim(),
       sourcePage: typeof window !== "undefined" ? window.location.pathname : "",
       honeypot,
+      renderedAt,
     };
 
     try {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Filter, X, Loader2 } from "lucide-react";
 import SolutionCategoryRow from "./SolutionCategoryRow";
 import { publicSolutionsApi } from "@/lib/publicApi";
@@ -8,12 +8,21 @@ import { publicSolutionsApi } from "@/lib/publicApi";
 const INITIAL_VISIBLE = 2;
 const LOAD_MORE_COUNT = 2;
 
+function slugify(s) {
+  return String(s || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export default function SolutionsCatalog() {
   const [catalog, setCatalog] = useState([]); // [{ id, title, items:[{id,title,image,href,rating,reviews}] }]
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const sectionRef = useRef(null);
 
   // Live catalog: Solution categories, each with its Programs, from the CMS.
   useEffect(() => {
@@ -49,6 +58,24 @@ export default function SolutionsCatalog() {
     };
   }, []);
 
+  // Deep-link support: /solutions?category=<slug> (e.g. from the Home "Explore More"
+  // button) pre-selects that Solution's section and scrolls to it. Matches on the
+  // category slug or its slugified title so hardcoded links stay resilient.
+  useEffect(() => {
+    if (!catalog.length || typeof window === "undefined") return;
+    const cat = new URLSearchParams(window.location.search).get("category");
+    if (!cat) return;
+    const norm = slugify(cat);
+    const match = catalog.find(
+      (c) => String(c.id) === cat || slugify(String(c.id)) === norm || slugify(c.title) === norm
+    );
+    if (match) {
+      setActiveFilter(match.id);
+      setVisibleCount(INITIAL_VISIBLE);
+      setTimeout(() => sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    }
+  }, [catalog]);
+
   const filtered = activeFilter ? catalog.filter((c) => c.id === activeFilter) : catalog;
   const displayed = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
@@ -65,7 +92,7 @@ export default function SolutionsCatalog() {
   };
 
   return (
-    <section className="bg-[#F8F8F8] py-10 sm:py-14 md:py-16">
+    <section ref={sectionRef} className="scroll-mt-24 bg-[#F8F8F8] py-10 sm:py-14 md:py-16">
       <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-16 xl:px-24">
         {loading ? (
           <div className="flex items-center justify-center py-16 text-slate-400">
