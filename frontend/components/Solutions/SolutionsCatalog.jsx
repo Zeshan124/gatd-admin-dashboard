@@ -16,6 +16,48 @@ function slugify(s) {
     .replace(/^-+|-+$/g, "");
 }
 
+// Fuzzy matching so a hardcoded deep-link slug (e.g. "executive-educational")
+// still resolves to the right CMS category even when the wording differs slightly
+// from the admin-entered title (e.g. "Executive Education Program").
+const STOP = new Set(["and", "the", "for", "of", "a", "an", "our", "program", "programs", "programme", "programmes"]);
+function tokenize(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter((t) => t.length >= 3 && !STOP.has(t));
+}
+// Two tokens match if equal or one is a ≥5-char prefix of the other
+// (so "education" ~ "educational", "conference" ~ "conferences").
+function tokenMatch(a, b) {
+  if (a === b) return true;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return short.length >= 5 && long.startsWith(short);
+}
+// Fraction of the query's tokens that have a match in the candidate's tokens.
+function similarity(queryTokens, candTokens) {
+  if (!queryTokens.length || !candTokens.length) return 0;
+  let hits = 0;
+  for (const q of queryTokens) if (candTokens.some((c) => tokenMatch(q, c))) hits++;
+  return hits / queryTokens.length;
+}
+
+/** Resolve a ?category= value to a catalog entry: exact slug → title slug → fuzzy. */
+function resolveCategory(catalog, raw) {
+  const norm = slugify(raw);
+  let match = catalog.find((c) => String(c.id) === raw || slugify(String(c.id)) === norm || slugify(c.title) === norm);
+  if (match) return match;
+  const q = tokenize(raw.replace(/-/g, " "));
+  let best = null;
+  let bestScore = 0;
+  for (const c of catalog) {
+    const score = similarity(q, tokenize(c.title));
+    if (score > bestScore) { bestScore = score; best = c; }
+  }
+  return bestScore >= 0.5 ? best : null;
+}
+
 export default function SolutionsCatalog() {
   const [catalog, setCatalog] = useState([]); // [{ id, title, items:[{id,title,image,href,rating,reviews}] }]
   const [loading, setLoading] = useState(true);
@@ -65,14 +107,15 @@ export default function SolutionsCatalog() {
     if (!catalog.length || typeof window === "undefined") return;
     const cat = new URLSearchParams(window.location.search).get("category");
     if (!cat) return;
-    const norm = slugify(cat);
-    const match = catalog.find(
-      (c) => String(c.id) === cat || slugify(String(c.id)) === norm || slugify(c.title) === norm
-    );
+    const match = resolveCategory(catalog, cat);
     if (match) {
       setActiveFilter(match.id);
       setVisibleCount(INITIAL_VISIBLE);
-      setTimeout(() => sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+      // Scroll after the filtered render settles; retry once for late image layout
+      // (a single early scroll can miss on a fresh page load).
+      const toSection = () => sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(toSection, 150);
+      setTimeout(toSection, 650);
     }
   }, [catalog]);
 

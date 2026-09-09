@@ -83,8 +83,8 @@ const solutions = [
     title: "Global Conferences",
     description:
       "Global ATD curates and delivers world-class conferences that unite visionary leaders, innovators, policymakers, and change-makers to shape the future of business, leadership, and society. Designed as dynamic platforms for strategic dialogue and collaboration, our conferences foster global connections and generate actionable insights that drive progress and transformation. Each conference is meticulously crafted to address critical global challenges, spotlight emerging trends, and inspire forward-thinking leadership across industries. By bringing together diverse voices and perspectives, Global ATD’s conferences create opportunities for knowledge exchange, networking, and strategic partnerships—empowering participants to lead with vision, innovate with purpose, and contribute meaningfully to global growth and development.",
-    image: "/images/solutions/Event-Management/7.jpg",
-    href: "/solutions/event-management",
+    image: "/images/solutions/Global-Conferences/Global_Confrences.jpeg",
+    href: "/solutions/global-conferences",
   },
    {
     id: "industry-specific",
@@ -93,8 +93,8 @@ const solutions = [
     title: "Industry Specific",
     description:
       "GATD designs specialised training solutions for key industries such as finance, healthcare, education, technology, and public service. Each program is tailored to current market realities and future trends, equipping participants with relevant skills and insights to thrive in their sector.",
-    image: "/images/solutions/Event-Management/7.jpg",
-    href: "/solutions/event-management",
+    image: "/images/solutions/Industry-Specific/Industry-Specific.jpeg",
+    href: "/solutions/industry-specific",
   },
 ];
 
@@ -103,9 +103,11 @@ export default function OurSolutions() {
   const active = solutions.find((s) => s.id === activeId);
 
   // Deep-link "Explore More" to this solution's own section on the /solutions page
-  // (pre-filtered + scrolled there), rather than the general Solutions page.
-  const exploreSlug = (active.href || "").replace(/^\/solutions\/?/, "").replace(/\/+$/, "");
-  const exploreHref = exploreSlug ? `/solutions?category=${encodeURIComponent(exploreSlug)}` : "/solutions";
+  // (pre-filtered + scrolled there), rather than the general Solutions page. Keyed
+  // by the distinct tab `id` — the hardcoded `href` values are unreliable (several
+  // tabs share the same href), whereas `id` is unique per tab and the catalog
+  // matches it against the real CMS category slug/title.
+  const exploreHref = `/solutions?category=${encodeURIComponent(active.id)}`;
 
   return (
     <section className="bg-white py-12 sm:py-16 md:py-20">
