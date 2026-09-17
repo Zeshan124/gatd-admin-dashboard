@@ -9,6 +9,15 @@ function stripInternal(obj) {
   return rest;
 }
 
+// Secret preview: a valid ?preview= / ?key= token lets a Draft/Hidden Program or
+// Subprogram be viewed by direct link only (still absent from nav/catalog/listings),
+// so it can be shared for approval before going live. Configure PREVIEW_TOKEN in env.
+const PREVIEW_TOKEN = process.env.PREVIEW_TOKEN || "";
+function isPreview(req) {
+  const key = String(req.query.preview || req.query.key || "");
+  return PREVIEW_TOKEN.length > 0 && key === PREVIEW_TOKEN;
+}
+
 // GET /apis/public/solutions  — all active parents, each with active children
 async function catalog(req, res) {
   try {
@@ -144,15 +153,23 @@ async function parent(req, res) {
 // GET /apis/public/child-solutions/:slug — one child + its published programmes
 async function child(req, res) {
   try {
+    const preview = isPreview(req);
+    const gate = preview
+      ? "c.delete_status = 0 AND p.delete_status = 0"
+      : "c.is_active = 1 AND c.delete_status = 0 AND p.is_active = 1 AND p.delete_status = 0";
     const rows = await query(
       `SELECT c.*, p.slug AS parent_slug FROM child_solutions c JOIN parent_solutions p ON p.id = c.parent_solution_id
-        WHERE c.slug = ? AND c.is_active = 1 AND c.delete_status = 0 AND p.is_active = 1 AND p.delete_status = 0 LIMIT 1`,
+        WHERE c.slug = ? AND ${gate} LIMIT 1`,
       [req.params.slug]
     );
     if (!rows[0]) return sendError(res, 404, "NOT_FOUND", "Solution not found");
 
     const data = stripInternal(mapChild(rows[0]));
-    data.programmes = await programmesProjection(rows[0].id, rows[0].slug, { publishedOnly: true, activeOnly: true });
+    // In preview, include Draft subprogrammes too so the page renders complete.
+    data.programmes = await programmesProjection(rows[0].id, rows[0].slug, {
+      publishedOnly: !preview,
+      activeOnly: !preview,
+    });
     return res.json({ data });
   } catch (err) {
     console.error("[public] child error:", err);
@@ -182,16 +199,45 @@ async function programsList(req, res) {
 // GET /apis/public/programs/:slug — one full published program
 async function program(req, res) {
   try {
+    const preview = isPreview(req);
+    const gate = preview
+      ? "sp.delete_status = 0 AND c.delete_status = 0"
+      : "sp.is_published = 1 AND sp.is_active = 1 AND sp.delete_status = 0 AND c.is_active = 1 AND c.delete_status = 0";
     const rows = await query(
-      `SELECT sp.*, c.slug AS child_slug, c.title AS child_title FROM solution_programs sp
+      `SELECT sp.*, c.slug AS child_slug, c.title AS child_title,
+              p.slug AS parent_slug, p.title AS parent_title
+         FROM solution_programs sp
          JOIN child_solutions c ON c.id = sp.child_solution_id
-        WHERE sp.slug = ? AND sp.is_published = 1 AND sp.is_active = 1 AND sp.delete_status = 0
-          AND c.is_active = 1 AND c.delete_status = 0 LIMIT 1`,
+         JOIN parent_solutions p ON p.id = c.parent_solution_id
+        WHERE sp.slug = ? AND ${gate} LIMIT 1`,
       [req.params.slug]
     );
     if (!rows[0]) return sendError(res, 404, "NOT_FOUND", "Program not found");
     const data = stripInternal(mapProgram(rows[0]));
-    data.childSolutionTitle = rows[0].child_title; // for the breadcrumb
+    // Hierarchy for the breadcrumb + registration form context.
+    data.childSolutionTitle = rows[0].child_title; // Program (child_solution)
+    data.parentSolutionSlug = rows[0].parent_slug; // Solution (parent_solution)
+    data.parentSolutionTitle = rows[0].parent_title;
+
+    // Registration options: the priced, published+active Subprograms that belong
+    // to THIS Program only (so a program page never offers unrelated programmes).
+    const opts = await query(
+      `SELECT slug, title, price_cents, currency FROM solution_programs
+        WHERE child_solution_id = ? AND is_published = 1 AND is_active = 1 AND delete_status = 0
+          AND price_cents IS NOT NULL
+        ORDER BY sort_order ASC, title ASC`,
+      [rows[0].child_solution_id]
+    );
+    data.registrationOptions = opts.map((o) => ({
+      slug: o.slug, title: o.title, priceCents: o.price_cents, currency: o.currency,
+    }));
+    // In preview, the current (Draft) program isn't in the published list above —
+    // include it so its registration form still shows it.
+    if (preview && rows[0].price_cents != null && !opts.find((o) => o.slug === rows[0].slug)) {
+      data.registrationOptions.unshift({
+        slug: rows[0].slug, title: rows[0].title, priceCents: rows[0].price_cents, currency: rows[0].currency,
+      });
+    }
     return res.json({ data });
   } catch (err) {
     console.error("[public] program error:", err);

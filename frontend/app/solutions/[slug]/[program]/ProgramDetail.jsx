@@ -73,7 +73,10 @@ export default function ProgramDetail() {
     }
     setStatus("loading");
     try {
-      const res = await publicSolutionsApi.program(slug);
+      // Preview: a ?preview= / ?key= token loads a Draft/Hidden program by link.
+      const qp = new URLSearchParams(window.location.search);
+      const preview = qp.get("preview") || qp.get("key") || "";
+      const res = await publicSolutionsApi.program(slug, preview);
       setProgram(res.data || res);
       setStatus("ready");
     } catch (e) {
@@ -168,18 +171,31 @@ export default function ProgramDetail() {
       )}
       {program.facilitator && <ProgramFacilitator facilitator={program.facilitator} />}
       {program.certification && <RecognizedSpeaker certification={program.certification} />}
-      <AccreditedBy />
-      {(program.pricingHeading || priceStr) && (
+      {program.showAccreditedBy !== false && <AccreditedBy />}
+      {(program.pricingHeading || priceStr || program.pricingNote) && (
         <ProgramPricing
           heading={program.pricingHeading}
           currency={program.currency}
           price={priceStr}
           period={program.pricingPeriod}
           description={program.pricingDescription}
+          note={program.pricingNote}
         />
       )}
       {program.faqs?.length > 0 && <ProgramFAQ faqs={program.faqs} />}
-      <ProgramRegistration heading={program.registrationHeading || `For ${program.title}`} />
+      {program.showRegistration !== false && (
+        <ProgramRegistration
+          heading={program.registrationHeading || `For ${program.title}`}
+          options={(program.registrationOptions || []).map((o) => ({
+            slug: o.slug,
+            label: o.title,
+            price: o.priceCents != null ? o.priceCents / 100 : 0,
+            currency: o.currency,
+          }))}
+          solutionTitle={program.parentSolutionTitle}
+          programTitle={program.childSolutionTitle}
+        />
+      )}
       <CommitmentBanner />
     </main>
   );

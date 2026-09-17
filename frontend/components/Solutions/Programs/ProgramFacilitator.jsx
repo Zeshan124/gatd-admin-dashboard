@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const defaultFacilitator = {
   name: "Prof. Dr. Joel Farnworth",
@@ -25,14 +27,29 @@ const defaultFacilitator = {
 };
 
 export default function ProgramFacilitator({ facilitator }) {
+  // Accept a single facilitator object, an array, or { facilitators: [...] }.
+  const list = Array.isArray(facilitator)
+    ? facilitator
+    : Array.isArray(facilitator?.facilitators)
+    ? facilitator.facilitators
+    : facilitator
+    ? [facilitator]
+    : [defaultFacilitator];
+
+  const [index, setIndex] = useState(0);
+  const cur = Math.min(index, list.length - 1);
+  const active = list[cur] || defaultFacilitator;
+  const multiple = list.length > 1;
+  const go = (dir) => setIndex((i) => (i + dir + list.length) % list.length);
+
   const {
     name,
     role,
-    image,
-    bg,
-    expertise,
-    biography,
-  } = facilitator || defaultFacilitator;
+    image = defaultFacilitator.image,
+    bg = defaultFacilitator.bg,
+    expertise = [],
+    biography = [],
+  } = active;
 
   return (
     <section className="relative overflow-hidden py-0">
@@ -45,75 +62,98 @@ export default function ProgramFacilitator({ facilitator }) {
         className="object-cover object-center"
         priority
       />
-      {/* Dark overlay for text readability */}
-      
 
       <div className="relative z-10 mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-end [&>*]:order-none">
 
           {/* Left — Professor Image (order-2 on mobile so content shows first) */}
           <div className="relative flex items-center justify-center py-10 lg:py-16 order-2 lg:order-1">
-            {/* Professor Image — cut out, no background */}
             <div className="relative flex items-center justify-center">
               <Image
+                key={image}
                 src={image}
-                alt={name}
+                alt={name || "Facilitator"}
                 width={600}
                 height={560}
                 className="object-contain w-auto max-h-[460px] sm:max-h-[540px]"
                 priority
               />
             </div>
-
-            {/* Name Card — overlays bottom of image */}
-            {/* <div className="absolute bottom-0 left-0 right-0 lg:right-auto lg:left-0 mx-4 sm:mx-6 lg:mx-0 mb-0">
-              <div className="bg-white rounded-t-2xl px-6 py-5 shadow-xl w-full lg:max-w-sm">
-                <h3 className="text-xl sm:text-2xl font-bold text-red-600 mb-1">
-                  Prof. Dr. Joel Farnworth
-                </h3>
-                <p className="text-sm sm:text-base text-slate-700">
-                  Dean of Business and Management Studies EIU-Paris
-                </p>
-              </div>
-            </div> */}
           </div>
 
           {/* Right — Content (order-1 on mobile so it shows first) */}
           <div className="py-10 sm:py-14 lg:py-16 pl-0 lg:pl-8 order-1 lg:order-2">
-            {/* Title */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8 sm:mb-10">
-              Program Facilitator
-            </h2>
+            {/* Title + navigation (nav shown only when there's more than one) */}
+            <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
+                Program Facilitator{multiple ? "s" : ""}
+              </h2>
+              {multiple && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => go(-1)}
+                    aria-label="Previous facilitator"
+                    className="w-10 h-10 rounded-full border-2 border-white/60 text-white flex items-center justify-center hover:bg-white hover:text-[#D52029] transition-colors duration-200"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => go(1)}
+                    aria-label="Next facilitator"
+                    className="w-10 h-10 rounded-full border-2 border-white/60 text-white flex items-center justify-center hover:bg-white hover:text-[#D52029] transition-colors duration-200"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Name + role (shown when there are multiple so you know who's displayed) */}
+            {multiple && (name || role) && (
+              <div className="mb-8">
+                {name && <p className="text-xl sm:text-2xl font-bold text-white">{name}</p>}
+                {role && <p className="text-sm sm:text-base text-white/80 mt-1">{role}</p>}
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/60 mt-2">
+                  {cur + 1} / {list.length} Facilitators
+                </p>
+              </div>
+            )}
 
             {/* Area of Expertise */}
-            <div className="mb-8">
-              <h4 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider mb-4">
-                Area of Expertise
-              </h4>
-              <ul className="space-y-2">
-                {expertise.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm sm:text-base text-white/90">
-                    <span className="mt-1.5 w-2 h-2 rounded-full bg-white flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {expertise.length > 0 && (
+              <div className="mb-8">
+                <h4 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider mb-4">
+                  Area of Expertise
+                </h4>
+                <ul className="space-y-2">
+                  {expertise.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm sm:text-base text-white/90">
+                      <span className="mt-1.5 w-2 h-2 rounded-full bg-white flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Biography */}
-            <div>
-              <h4 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider mb-4">
-                Biography
-              </h4>
-              <ul className="space-y-2">
-                {biography.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm sm:text-base text-white/90">
-                    <span className="mt-1.5 w-2 h-2 rounded-full bg-white flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {biography.length > 0 && (
+              <div>
+                <h4 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider mb-4">
+                  Biography
+                </h4>
+                <ul className="space-y-2">
+                  {biography.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm sm:text-base text-white/90">
+                      <span className="mt-1.5 w-2 h-2 rounded-full bg-white flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
         </div>

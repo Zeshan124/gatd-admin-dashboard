@@ -83,17 +83,6 @@ function normalizePhone(raw, country) {
   return digits.slice(0, max);
 }
 
-const programOptions = [
-  { id: 1, slug: "strategic-hr-business-partnership", label: "Strategic HR Business Partnership & Beyond", price: 3850 },
-  { id: 2, slug: "business-people-leadership", label: "Impactful Business and People Leadership", price: 3850 },
-  { id: 3, slug: "performance-rewards", label: "Performance Development and Rewards Management", price: 2800 },
-  { id: 4, slug: "resourcing-talent-learning", label: "Resourcing, Talent and Learning Management", price: 2800 },
-  { id: 9, slug: "impactive-hr", label: "Impactive HR for the Uninitiated", price: 2800 },
-  { id: 10, slug: "progressing-org-development", label: "Progressing Organization Development", price: 2800 },
-  { id: 11, slug: "advancing-trainer-development", label: "Advancing Trainer Development (ToT)", price: 2800 },
-  { id: 12, slug: "management-best-practices", label: "Management: Best Practices for Best Results", price: 3850 },
-];
-
 // Backend endpoint — override per-environment via NEXT_PUBLIC_REGISTRATIONS_API.
 const API_URL =
   process.env.NEXT_PUBLIC_REGISTRATIONS_API ||
@@ -103,8 +92,13 @@ export default function ProgramRegistration({
   badge = "Register now",
   heading = "For Strategic HR Business Partner Training",
   backgroundImage = "/images/solutions/strategic-hr/contact_map.jpg",
+  options = [], // [{ slug, label, price, currency }] — this Program's subprogrammes
+  solutionTitle = "",
+  programTitle = "",
 }) {
   const pathname = usePathname();
+  // Currency comes from the programme options (a Program's subprogrammes share one).
+  const currency = options[0]?.currency || "SGD";
 
   const [form, setForm] = useState({
     firstName: "", email: "", phone: "",
@@ -154,8 +148,8 @@ export default function ProgramRegistration({
 
   const toggleProgram = (prog) => {
     setSelectedPrograms((prev) =>
-      prev.find((p) => p.id === prog.id)
-        ? prev.filter((p) => p.id !== prog.id)
+      prev.find((p) => p.slug === prog.slug)
+        ? prev.filter((p) => p.slug !== prog.slug)
         : [...prev, prog]
     );
   };
@@ -266,9 +260,26 @@ export default function ProgramRegistration({
         </span>
 
         {/* Heading */}
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#414143] leading-tight mb-10">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#414143] leading-tight mb-4">
           {heading}
         </h2>
+
+        {/* Hierarchy context — which Solution / Program this registration is for */}
+        {(solutionTitle || programTitle) && (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500 mb-10">
+            {solutionTitle && (
+              <span>
+                <span className="font-semibold text-[#414143]">Solution:</span> {solutionTitle}
+              </span>
+            )}
+            {solutionTitle && programTitle && <span className="text-slate-300">/</span>}
+            {programTitle && (
+              <span>
+                <span className="font-semibold text-[#414143]">Program:</span> {programTitle}
+              </span>
+            )}
+          </div>
+        )}
 
         {status === "success" ? (
           <div className="bg-white rounded-2xl p-8 sm:p-10 shadow-xl max-w-2xl">
@@ -425,11 +436,14 @@ export default function ProgramRegistration({
             {/* Dropdown list */}
             {progDropOpen && (
               <div className="absolute top-full left-0 right-0 z-100 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-y-auto max-h-72">
-                {programOptions.map((prog) => {
-                  const checked = !!selectedPrograms.find((p) => p.id === prog.id);
+                {options.length === 0 && (
+                  <p className="px-5 py-4 text-sm text-slate-400">No programmes available for registration yet.</p>
+                )}
+                {options.map((prog) => {
+                  const checked = !!selectedPrograms.find((p) => p.slug === prog.slug);
                   return (
                     <button
-                      key={prog.id}
+                      key={prog.slug}
                       type="button"
                       onClick={() => toggleProgram(prog)}
                       className={`w-full flex items-center justify-between gap-3 px-5 py-3.5 text-sm text-left transition-colors duration-150 ${checked ? "bg-[#D52029]/5" : "hover:bg-slate-50"}`}
@@ -447,7 +461,7 @@ export default function ProgramRegistration({
                         </span>
                       </span>
                       <span className={`text-xs font-bold shrink-0 ${checked ? "text-[#D52029]" : "text-slate-500"}`}>
-                        SGD {prog.price.toLocaleString()}
+                        {prog.currency || currency} {prog.price.toLocaleString()}
                       </span>
                     </button>
                   );
@@ -462,7 +476,7 @@ export default function ProgramRegistration({
                   {selectedPrograms.length === 1 ? selectedPrograms[0].label : `Total (${selectedPrograms.length} programmes)`}
                 </span>
                 <span className="text-base font-black text-white">
-                  SGD {totalAmount.toLocaleString()}
+                  {currency} {totalAmount.toLocaleString()}
                 </span>
               </div>
             )}

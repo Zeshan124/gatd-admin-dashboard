@@ -93,13 +93,14 @@ export default function ExecutiveCurriculum({
         </div>
 
         {/* Day columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-x-12">
           {dayList.map((day, di) => (
             <div key={di} className="flex flex-col">
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#D52029] text-center mb-10 tracking-wide">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#D52029] text-center mb-8 tracking-wide">
                 {day.label}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* One session → full-width card (no empty half); two+ → side by side. */}
+              <div className={`grid grid-cols-1 gap-6 ${day.sessions.length > 1 ? "sm:grid-cols-2" : ""}`}>
                 {day.sessions.map((session, si) => (
                   <CurriculumCard key={si} index={si + 1} session={session} />
                 ))}

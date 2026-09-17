@@ -12,6 +12,7 @@ import {
   BookOpen,
   Newspaper,
   Building2,
+  Award,
   Send,
   Users,
   Activity,
@@ -29,6 +30,7 @@ const NAV = [
   { label: "Blog", href: "/admin/blog", icon: Newspaper },
   { label: "Newsletter", href: "/admin/newsletter", icon: Send },
   { label: "Company Profile", href: "/admin/company-profile", icon: Building2 },
+  { label: "Accredited By", href: "/admin/accreditation", icon: Award },
   // { label: "Users", href: "/admin/users", icon: Users },
   // { label: "Activity", href: "/admin/activity", icon: Activity },
 ];

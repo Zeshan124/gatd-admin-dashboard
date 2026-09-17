@@ -35,7 +35,10 @@ export default function SolutionDetail() {
     }
     setStatus("loading");
     try {
-      const res = await publicSolutionsApi.child(slug);
+      // Preview: a ?preview= / ?key= token loads a Draft/Hidden program by link.
+      const qp = new URLSearchParams(window.location.search);
+      const preview = qp.get("preview") || qp.get("key") || "";
+      const res = await publicSolutionsApi.child(slug, preview);
       const d = res.data || res;
       if (Array.isArray(d.programmes)) {
         d.programmes = d.programmes.map((p, i) => ({ id: p.slug || i, ...p }));

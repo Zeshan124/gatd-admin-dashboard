@@ -14,6 +14,7 @@ const contactRoutes = require("./src/routes/contactRoutes");
 const brochureRoutes = require("./src/routes/brochureRoutes");
 const newsletterRoutes = require("./src/routes/newsletterRoutes");
 const companyProfileRoutes = require("./src/routes/companyProfileRoutes");
+const accreditationRoutes = require("./src/routes/accreditationRoutes");
 const statsRoutes = require("./src/routes/statsRoutes");
 const parentSolutionsRoutes = require("./src/routes/parentSolutionsRoutes");
 const childSolutionsRoutes = require("./src/routes/childSolutionsRoutes");
@@ -102,6 +103,8 @@ app.use("/apis/brochure-leads", brochureRoutes);
 app.use("/apis/newsletter", newsletterRoutes);
 app.use("/apis/public/company-profile", companyProfileRoutes.publicRouter);
 app.use("/apis/admin/company-profile", companyProfileRoutes.adminRouter);
+app.use("/apis/public/accreditation", accreditationRoutes.publicRouter);
+app.use("/apis/admin/accreditation", accreditationRoutes.adminRouter);
 app.use("/apis/stats", statsRoutes);
 
 // Solutions & Programs content module

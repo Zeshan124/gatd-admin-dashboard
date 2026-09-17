@@ -48,10 +48,12 @@ export const publicSolutionsApi = {
   menu: () => pub("/public/solutions/menu"),
   /** Landing catalog → { data: [{ slug, title, description, children:[...] }] } */
   catalog: () => pub("/public/solutions"),
-  /** One Program (child solution) + its Subprograms → { data: {...} } */
-  child: (slug) => pub(`/public/child-solutions/${encodeURIComponent(slug)}`),
-  /** One Subprogram (program) full detail → { data: {...} } */
-  program: (slug) => pub(`/public/programs/${encodeURIComponent(slug)}`),
+  /** One Program (child solution) + its Subprograms → { data: {...} }. Pass a
+   *  preview token to load a Draft/Hidden item by direct link. */
+  child: (slug, preview) => pub(`/public/child-solutions/${encodeURIComponent(slug)}`, preview ? { preview } : undefined),
+  /** One Subprogram (program) full detail → { data: {...} }. Pass a preview token
+   *  to load a Draft/Hidden item by direct link. */
+  program: (slug, preview) => pub(`/public/programs/${encodeURIComponent(slug)}`, preview ? { preview } : undefined),
   /** All published Subprogram slugs → { data: [{ slug, title, childSolutionSlug }] } */
   programSlugs: () => pub("/public/programs"),
 };
@@ -60,4 +62,10 @@ export const publicSolutionsApi = {
 export const publicCompanyProfileApi = {
   /** { data: { isEnabled, eyebrow, heading, description, buttonLabel, pdfUrl } } */
   get: () => pub("/public/company-profile"),
+};
+
+// "Accredited By" settings shown on Program pages (public read).
+export const publicAccreditationApi = {
+  /** { data: { heading, logos:[{ name, logo }] } } */
+  get: () => pub("/public/accreditation"),
 };

@@ -313,6 +313,14 @@ export const companyProfileApi = {
   update: (body) => request("/admin/company-profile", { method: "PATCH", body }),
 };
 
+// ── "Accredited By" settings (Program pages) ─────────────────────────────────
+export const accreditationApi = {
+  /** { data: { heading, logos:[{name,logo}] } } */
+  get: () => request("/admin/accreditation"),
+  /** Update heading + logos → { data: {...} } */
+  update: (body) => request("/admin/accreditation", { method: "PATCH", body }),
+};
+
 // ── Solutions / Programs content (CMS) ───────────────────────────────────────
 // Three-level hierarchy managed from the dashboard:
 //   Solution (parent_solutions) → Program (child_solutions) → Subprogram (solution_programs)

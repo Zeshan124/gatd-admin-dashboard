@@ -89,14 +89,31 @@ async function createRegistration(req, res) {
       return sendError(res, 422, "VALIDATION_ERROR", "One or more fields are invalid", errors);
     }
 
-    // 2) Look up selected programmes in the catalog (server-authoritative pricing).
+    // 2) Look up selected programmes for server-authoritative pricing. Check the
+    //    legacy registrations catalog first, then the Solutions CMS
+    //    (solution_programs) for any slug not found there — so CMS Subprograms
+    //    (which aren't in the old catalog) are registrable too. CMS items carry a
+    //    NULL program_id (registration_programs.program_id is nullable).
     const placeholders = value.programSlugs.map(() => "?").join(", ");
-    const programs = await query(
+    let programs = await query(
       `SELECT id, slug, title, price_cents, currency
          FROM programs
         WHERE is_active = 1 AND slug IN (${placeholders})`,
       value.programSlugs
     );
+    const foundInCatalog = new Set(programs.map((p) => p.slug));
+    const missingSlugs = value.programSlugs.filter((s) => !foundInCatalog.has(s));
+    if (missingSlugs.length) {
+      const ph2 = missingSlugs.map(() => "?").join(", ");
+      const cmsPrograms = await query(
+        `SELECT NULL AS id, slug, title, price_cents, currency
+           FROM solution_programs
+          WHERE is_published = 1 AND is_active = 1 AND delete_status = 0 AND price_cents IS NOT NULL
+            AND slug IN (${ph2})`,
+        missingSlugs
+      );
+      programs = programs.concat(cmsPrograms);
+    }
 
     if (programs.length !== value.programSlugs.length) {
       const found = new Set(programs.map((p) => p.slug));

@@ -24,7 +24,7 @@ import {
   Toggle,
   MediaInput,
   ObjectListEditor,
-  JsonField,
+  StringListEditor,
   Section,
   DrawerShell,
   DeleteDialog,
@@ -36,28 +36,220 @@ const PAGE_SIZE = 25;
 
 const LAYOUT_TYPES = [
   { value: "", label: "None" },
-  { value: "strategic_pillars", label: "Strategic pillars (default)" },
-  { value: "precision_pillars", label: "Precision pillars" },
-  { value: "people_strategy_panels", label: "People strategy panels" },
-  { value: "learning_journey", label: "Learning journey" },
-  { value: "org_framework", label: "Org framework" },
-  { value: "session_plan", label: "Session plan" },
-  { value: "curriculum", label: "Curriculum" },
-  { value: "hexagons", label: "Hexagons" },
+  // These two use the simple day-by-day editor below (recommended).
+  { value: "curriculum", label: "Curriculum — day-by-day (simple editor)" },
+  { value: "session_plan", label: "Session plan — day-by-day (simple editor)" },
+  // Advanced layouts (different visual styles) still edited as JSON.
+  { value: "strategic_pillars", label: "Strategic pillars (advanced)" },
+  { value: "precision_pillars", label: "Precision pillars (advanced)" },
+  { value: "people_strategy_panels", label: "People strategy panels (advanced)" },
+  { value: "learning_journey", label: "Learning journey (advanced)" },
+  { value: "org_framework", label: "Org framework (advanced)" },
+  { value: "hexagons", label: "Hexagons (advanced)" },
 ];
+
+// Layouts whose data is the simple { days:[{ label, sessions:[{ color,title,bullets }] }] }
+// shape handled by the friendly CurriculumEditor. Others keep a JSON fallback.
+const SIMPLE_LAYOUTS = new Set(["curriculum", "session_plan"]);
 
 function nn(v) {
   const t = (v ?? "").toString().trim();
   return t ? t : null;
 }
-function parseMaybeJson(text) {
-  const t = (text || "").trim();
-  if (!t) return { ok: true, value: null };
-  try {
-    return { ok: true, value: JSON.parse(t) };
-  } catch (e) {
-    return { ok: false, error: e.message };
-  }
+function cleanStrList(a) {
+  return (Array.isArray(a) ? a : []).map((s) => String(s || "").trim()).filter(Boolean);
+}
+// Normalize the structured editors' state into the API shapes (or null if empty).
+function cleanFacilitatorList(list) {
+  const arr = (Array.isArray(list) ? list : list ? [list] : [])
+    .filter((f) => f && f.name && f.name.trim())
+    .map((f) => ({
+      name: f.name.trim(),
+      ...(f.role && f.role.trim() ? { role: f.role.trim() } : {}),
+      ...(f.image ? { image: f.image } : {}),
+      ...(f.bg ? { bg: f.bg } : {}),
+      expertise: cleanStrList(f.expertise),
+      biography: cleanStrList(f.biography),
+    }));
+  if (arr.length === 0) return null;
+  return arr.length === 1 ? arr[0] : arr; // single object, or array (page shows nav)
+}
+function cleanCertification(c) {
+  if (!c) return null;
+  const badge = (c.badge || "").trim();
+  const heading = (c.heading || "").trim();
+  const image = c.image || null;
+  const paragraphs = cleanStrList(c.paragraphs);
+  if (!badge && !heading && !image && paragraphs.length === 0) return null;
+  return {
+    ...(badge ? { badge } : {}),
+    ...(heading ? { heading } : {}),
+    ...(image ? { image } : {}),
+    paragraphs,
+  };
+}
+function cleanLayoutData(ld) {
+  const days = (Array.isArray(ld?.days) ? ld.days : [])
+    .map((d) => ({
+      label: (d.label || "").trim(),
+      sessions: (Array.isArray(d.sessions) ? d.sessions : [])
+        .map((s) => ({ color: s.color === "dark" ? "dark" : "red", title: (s.title || "").trim(), bullets: cleanStrList(s.bullets) }))
+        .filter((s) => s.title || s.bullets.length),
+    }))
+    .filter((d) => d.label || d.sessions.length);
+  return { heading: (ld?.heading || "").trim(), badge: (ld?.badge || "").trim(), days };
+}
+
+/* ── Friendly editors that replace the old JSON textareas ──────────────────── */
+
+function SubForm({ title, onRemove, children }) {
+  return (
+    <div className="rounded-lg border border-slate-200 p-3 bg-slate-50/50 space-y-3 relative">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-wide text-brand">{title}</p>
+        {onRemove && (
+          <button type="button" onClick={onRemove} className="p-1 text-slate-400 hover:text-red-600" aria-label="Remove">
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FacilitatorsEditor({ value, onChange }) {
+  const list = Array.isArray(value) ? value : value ? [value] : [];
+  const setItem = (i, patch) => onChange(list.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
+  const add = () => onChange([...list, { name: "", role: "", image: null, bg: null, expertise: [], biography: [] }]);
+  const remove = (i) => onChange(list.filter((_, idx) => idx !== i));
+  return (
+    <div className="space-y-3">
+      {list.map((f, i) => (
+        <SubForm key={i} title={`Facilitator ${i + 1}`} onRemove={() => remove(i)}>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Name" value={f.name} onChange={(v) => setItem(i, { name: v })} placeholder="e.g. Prof. Dr. Joel Farnworth" />
+            <TextField label="Role / title" value={f.role} onChange={(v) => setItem(i, { role: v })} placeholder="e.g. Dean of Business…" />
+            <MediaInput label="Photo" value={f.image} onChange={(v) => setItem(i, { image: v })} />
+            <MediaInput label="Background image" value={f.bg} onChange={(v) => setItem(i, { bg: v })} />
+          </div>
+          <StringListEditor label="Area of expertise" value={f.expertise} onChange={(v) => setItem(i, { expertise: v })} placeholder="e.g. Leadership Development" />
+          <StringListEditor label="Biography" value={f.biography} onChange={(v) => setItem(i, { biography: v })} placeholder="e.g. Coach and Consultant" />
+        </SubForm>
+      ))}
+      <button type="button" onClick={add} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-dark">
+        <Plus className="w-4 h-4" /> Add facilitator
+      </button>
+      {list.length > 1 && (
+        <p className="text-xs text-slate-400">The public page shows prev/next arrows to switch between facilitators.</p>
+      )}
+    </div>
+  );
+}
+
+function CertificationEditor({ value, onChange }) {
+  const v = value || {};
+  const set = (patch) => onChange({ ...v, ...patch });
+  return (
+    <div className="space-y-3">
+      <TextField label="Badge" value={v.badge} onChange={(x) => set({ badge: x })} placeholder="e.g. Recognition of Learning" />
+      <TextArea label="Heading" value={v.heading} onChange={(x) => set({ heading: x })} rows={3} hint="Each new line becomes a separate line in the large heading." />
+      <MediaInput label="Certificate image" value={v.image} onChange={(x) => set({ image: x })} kind="image" />
+      <StringListEditor label="Paragraphs" value={v.paragraphs} onChange={(x) => set({ paragraphs: x })} placeholder="A paragraph of text" />
+    </div>
+  );
+}
+
+const SESSION_COLORS = [
+  { value: "red", label: "Red" },
+  { value: "dark", label: "Dark" },
+];
+
+function CurriculumEditor({ value, onChange }) {
+  const v = value || {};
+  const days = Array.isArray(v.days) ? v.days : [];
+  const setV = (patch) => onChange({ ...v, ...patch });
+  const setDays = (d) => setV({ days: d });
+  const setDay = (i, patch) => setDays(days.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
+  const addDay = () => setDays([...days, { label: `DAY ${days.length + 1}`, sessions: [{ color: days.length % 2 === 0 ? "red" : "dark", title: "", bullets: [] }] }]);
+  const removeDay = (i) => setDays(days.filter((_, idx) => idx !== i));
+  const setSessions = (di, sessions) => setDay(di, { sessions });
+  const addSession = (di) => {
+    const s = Array.isArray(days[di].sessions) ? days[di].sessions : [];
+    setSessions(di, [...s, { color: s.length % 2 === 0 ? "red" : "dark", title: "", bullets: [] }]);
+  };
+  const setSession = (di, si, patch) => setSessions(di, (days[di].sessions || []).map((x, idx) => (idx === si ? { ...x, ...patch } : x)));
+  const removeSession = (di, si) => setSessions(di, (days[di].sessions || []).filter((_, idx) => idx !== si));
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Heading" value={v.heading} onChange={(x) => setV({ heading: x })} placeholder="e.g. 5 Days of Leadership & Transformation" />
+        <TextField label="Badge" value={v.badge} onChange={(x) => setV({ badge: x })} placeholder="e.g. 5 Days" />
+      </div>
+      {days.map((day, di) => (
+        <SubForm key={di} title={`Day ${di + 1}`} onRemove={() => removeDay(di)}>
+          <TextField label="Day label" value={day.label} onChange={(x) => setDay(di, { label: x })} placeholder="e.g. DAY 1" />
+          <div className="space-y-2.5">
+            {(day.sessions || []).map((s, si) => (
+              <div key={si} className="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2 relative">
+                <button type="button" onClick={() => removeSession(di, si)} className="absolute top-1.5 right-1.5 p-1 text-slate-300 hover:text-red-600" aria-label="Remove session">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                <div className="grid grid-cols-[1fr_7rem] gap-2 pr-6">
+                  <TextField label={`Session ${si + 1} title`} value={s.title} onChange={(x) => setSession(di, si, { title: x })} placeholder="Session theme" />
+                  <label className="block">
+                    <span className="text-sm font-medium text-slate-700">Colour</span>
+                    <select value={s.color || "red"} onChange={(e) => setSession(di, si, { color: e.target.value })} className={`${inputCls} mt-1.5 bg-white`}>
+                      {SESSION_COLORS.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <StringListEditor label="Bullets" value={s.bullets} onChange={(x) => setSession(di, si, { bullets: x })} placeholder="A topic covered" />
+              </div>
+            ))}
+            <button type="button" onClick={() => addSession(di)} className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:text-brand-dark">
+              <Plus className="w-3.5 h-3.5" /> Add session
+            </button>
+          </div>
+        </SubForm>
+      ))}
+      <button type="button" onClick={addDay} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-dark">
+        <Plus className="w-4 h-4" /> Add day
+      </button>
+    </div>
+  );
+}
+
+// Fallback for the advanced layout styles (different data shape) — keeps them
+// editable/safe as JSON. New programs should use Curriculum / Session plan above.
+function LayoutJsonFallback({ value, onChange }) {
+  const [text, setText] = useState(() => (value == null ? "" : JSON.stringify(value, null, 2)));
+  const [err, setErr] = useState("");
+  const handle = (t) => {
+    setText(t);
+    const trimmed = t.trim();
+    if (!trimmed) { setErr(""); onChange(null); return; }
+    try { onChange(JSON.parse(trimmed)); setErr(""); } catch (e) { setErr(e.message); } // keep last valid
+  };
+  return (
+    <div>
+      <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
+        This is an <strong>advanced</strong> layout style with a custom shape, so it&apos;s edited as JSON. For simple
+        day-by-day content, switch the layout to <strong>Curriculum</strong> or <strong>Session plan</strong> above.
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => handle(e.target.value)}
+        rows={10}
+        spellCheck={false}
+        className={`${inputCls} font-mono text-xs`}
+      />
+      {err && <p className="text-xs text-red-600 mt-1">Invalid JSON: {err}</p>}
+    </div>
+  );
 }
 
 function PubBadge({ published }) {
@@ -393,6 +585,7 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [pricingPeriod, setPricingPeriod] = useState(editing?.pricingPeriod || "");
   const [pricingHeading, setPricingHeading] = useState(editing?.pricingHeading || "");
   const [pricingDescription, setPricingDescription] = useState(editing?.pricingDescription || "");
+  const [pricingNote, setPricingNote] = useState(editing?.pricingNote || "");
 
   const [overviewTitle, setOverviewTitle] = useState(editing?.overview?.title || "");
   const [overviewDescription, setOverviewDescription] = useState(editing?.overview?.description || "");
@@ -413,13 +606,17 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [published, setPublished] = useState(editing?.isPublished ?? true);
   const [clickable, setClickable] = useState(editing?.isClickable ?? true);
   const [linkUrl, setLinkUrl] = useState(editing?.linkUrl || "");
+  const [showAccreditedBy, setShowAccreditedBy] = useState(editing?.showAccreditedBy ?? true);
+  const [showRegistration, setShowRegistration] = useState(editing?.showRegistration ?? true);
 
-  // JSON sections stored as raw text; parsed at save.
-  const stringifyOrEmpty = (v) => (v == null ? "" : JSON.stringify(v, null, 2));
-  const [facilitatorText, setFacilitatorText] = useState(stringifyOrEmpty(editing?.facilitator));
-  const [certificationText, setCertificationText] = useState(stringifyOrEmpty(editing?.certification));
+  // Structured section content (edited via friendly forms, not JSON).
+  const [facilitators, setFacilitators] = useState(() => {
+    const f = editing?.facilitator;
+    return Array.isArray(f) ? f : f ? [f] : [];
+  });
+  const [certification, setCertification] = useState(editing?.certification || null);
   const [layoutType, setLayoutType] = useState(editing?.layoutType || "");
-  const [layoutDataText, setLayoutDataText] = useState(stringifyOrEmpty(editing?.layoutData));
+  const [layoutData, setLayoutData] = useState(editing?.layoutData || null);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -434,15 +631,24 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
     setError("");
     setFe({});
 
-    // Parse the JSON sections up-front so we can abort cleanly.
-    const fac = parseMaybeJson(facilitatorText);
-    const cert = parseMaybeJson(certificationText);
-    const layout = parseMaybeJson(layoutDataText);
-    if (!fac.ok) return abort("Facilitator JSON is invalid: " + fac.error);
-    if (!cert.ok) return abort("Certification JSON is invalid: " + cert.error);
-    if (!layout.ok) return abort("Curriculum (layout) JSON is invalid: " + layout.error);
-    if (layoutType && layout.value == null) {
-      return abort('A curriculum layout is selected, so "Curriculum data (JSON)" is required.');
+    // Build the section content from the structured editors.
+    const facilitatorValue = cleanFacilitatorList(facilitators);
+    const certificationValue = cleanCertification(certification);
+    // Simple layouts → clean the day/session/bullet shape; advanced → pass the
+    // (JSON-fallback) object through untouched so its custom shape isn't mangled.
+    let layoutValue = null;
+    if (layoutType) {
+      if (SIMPLE_LAYOUTS.has(layoutType)) {
+        layoutValue = cleanLayoutData(layoutData);
+        if (!layoutValue.heading && layoutValue.days.length === 0) {
+          return abort("You selected a curriculum layout — add a heading and at least one day, or set the layout to “None”.");
+        }
+      } else {
+        layoutValue = layoutData || null;
+        if (!layoutValue) {
+          return abort("This advanced layout needs its JSON content, or set the layout to “None”.");
+        }
+      }
     }
 
     const body = {
@@ -461,6 +667,7 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       pricingPeriod: nn(pricingPeriod),
       pricingHeading: nn(pricingHeading),
       pricingDescription: nn(pricingDescription),
+      pricingNote: nn(pricingNote),
       gainsHeading: nn(gainsHeading),
       focusHeading: nn(focusHeading),
       registrationHeading: nn(registrationHeading),
@@ -477,14 +684,16 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
         overviewTitle.trim() && overviewDescription.trim()
           ? { title: overviewTitle.trim(), description: overviewDescription.trim(), ...(overviewImage ? { image: overviewImage } : {}) }
           : null,
-      facilitator: fac.value,
-      certification: cert.value,
+      facilitator: facilitatorValue,
+      certification: certificationValue,
       layoutType: layoutType || null,
-      layoutData: layout.value,
+      layoutData: layoutValue,
       sortOrder: Number(sortOrder) || 0,
       isActive: active,
       isPublished: published,
       ratingEnabled,
+      showAccreditedBy,
+      showRegistration,
       isClickable: clickable,
       linkUrl: clickable ? nn(linkUrl) : null,
     };
@@ -598,6 +807,13 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
         </div>
       </Section>
 
+      <Section title="Page sections" description="Show or hide fixed sections on the public program page. (Other sections — Overview, Curriculum, Gains, Focus areas, Facilitator, Certification, Pricing, FAQs — hide automatically when left empty.)">
+        <div className="grid grid-cols-2 gap-4">
+          <Toggle label="Accredited By" value={showAccreditedBy} onChange={setShowAccreditedBy} onText="Shown" offText="Hidden" />
+          <Toggle label="Registration form" value={showRegistration} onChange={setShowRegistration} onText="Shown" offText="Hidden" />
+        </div>
+      </Section>
+
       <Section title="Hero & media">
         <div className="grid grid-cols-2 gap-4">
           <MediaInput label="Banner" value={banner} onChange={setBanner} />
@@ -634,6 +850,13 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
           <TextField label="Registration heading" value={registrationHeading} onChange={setRegistrationHeading} />
         </div>
         <TextArea label="Pricing description" value={pricingDescription} onChange={setPricingDescription} rows={2} />
+        <TextField
+          label="Alternative note (when price isn't finalised)"
+          value={pricingNote}
+          onChange={setPricingNote}
+          placeholder="e.g. Contact us via email for further details."
+          hint="Shown in place of the price when the Price field is left blank. Editable independently of the price."
+        />
       </Section>
 
       <Section title="Overview">
@@ -690,21 +913,15 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
         />
       </Section>
 
-      <Section title="Advanced content" description="These sections have flexible/nested shapes, so they're edited as JSON. Leave blank to omit.">
-        <JsonField
-          label="Facilitator (JSON)"
-          hint='e.g. {"name":"…","role":"…","image":"…","expertise":["…"],"biography":["…"]}'
-          value={facilitatorText}
-          onChange={setFacilitatorText}
-          rows={6}
-        />
-        <JsonField
-          label="Certification (JSON)"
-          hint='e.g. {"badge":"…","heading":"…","image":"…","paragraphs":["…"]}'
-          value={certificationText}
-          onChange={setCertificationText}
-          rows={5}
-        />
+      <Section title="Facilitator(s)" description="Add one or more facilitators. With more than one, the public page shows prev/next arrows.">
+        <FacilitatorsEditor value={facilitators} onChange={setFacilitators} />
+      </Section>
+
+      <Section title="Certification" description="The 'Certification on Successful Completion' block. Leave all fields blank to hide it.">
+        <CertificationEditor value={certification} onChange={setCertification} />
+      </Section>
+
+      <Section title="Curriculum" description="The day-by-day programme journey. Pick a layout style, then add days, sessions and bullet points.">
         <label className="block">
           <span className="text-sm font-medium text-slate-700">Curriculum layout</span>
           <select value={layoutType} onChange={(e) => setLayoutType(e.target.value)} className={`${inputCls} mt-1.5 bg-white`}>
@@ -714,16 +931,14 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
               </option>
             ))}
           </select>
-          {fe.layoutType && <p className="text-xs text-red-600 mt-1">{fe.layoutType}</p>}
+          {(fe.layoutType || fe.layoutData) && <p className="text-xs text-red-600 mt-1">{fe.layoutType || fe.layoutData}</p>}
         </label>
-        <JsonField
-          label="Curriculum data (JSON)"
-          hint='Required when a layout is selected. Needs at least {"heading":"…","badge":"…","days":[…]}'
-          value={layoutDataText}
-          onChange={setLayoutDataText}
-          rows={8}
-          error={fe.layoutData}
-        />
+        {layoutType &&
+          (SIMPLE_LAYOUTS.has(layoutType) ? (
+            <CurriculumEditor value={layoutData} onChange={setLayoutData} />
+          ) : (
+            <LayoutJsonFallback value={layoutData} onChange={setLayoutData} />
+          ))}
       </Section>
 
       <Section title="Ratings">

@@ -15,7 +15,7 @@ const LAYOUT_TYPES = new Set([
 const STRING_FIELDS = [
   ["eyebrow", "eyebrow"], ["banner", "banner"], ["card_image", "cardImage"], ["subheading", "subheading"],
   ["subtext", "subtext"], ["pricing_period", "pricingPeriod"], ["pricing_heading", "pricingHeading"],
-  ["pricing_description", "pricingDescription"], ["brochure", "brochure"], ["registration_heading", "registrationHeading"],
+  ["pricing_description", "pricingDescription"], ["pricing_note", "pricingNote"], ["brochure", "brochure"], ["registration_heading", "registrationHeading"],
   ["gains_heading", "gainsHeading"], ["focus_heading", "focusHeading"],
 ];
 
@@ -45,11 +45,14 @@ function mapProgram(r) {
     pricingPeriod: r.pricing_period,
     pricingHeading: r.pricing_heading,
     pricingDescription: r.pricing_description,
+    pricingNote: r.pricing_note,
     brochure: r.brochure,
     videoUrl: r.video_url,
     isClickable: !!r.is_clickable,
     linkUrl: r.link_url,
     registrationHeading: r.registration_heading,
+    showAccreditedBy: r.show_accredited_by == null ? true : !!r.show_accredited_by,
+    showRegistration: r.show_registration == null ? true : !!r.show_registration,
     overview: parseJson(r.overview),
     gainsHeading: r.gains_heading,
     gains: parseJson(r.gains),
@@ -103,13 +106,27 @@ function validateOverview(o) {
   if (typeof o.description !== "string" || !o.description.trim()) return "overview.description is required";
   return null;
 }
-function validateFacilitator(o) {
-  if (!o || typeof o !== "object" || Array.isArray(o)) return "facilitator must be an object";
+function validateOneFacilitator(o) {
+  if (!o || typeof o !== "object" || Array.isArray(o)) return "each facilitator must be an object";
   if (typeof o.name !== "string" || !o.name.trim()) return "facilitator.name is required";
   for (const k of ["expertise", "biography"]) {
     if (o[k] !== undefined && (!Array.isArray(o[k]) || !o[k].every((s) => typeof s === "string"))) return `facilitator.${k} must be an array of strings`;
   }
   return null;
+}
+function validateFacilitator(o) {
+  // Accept a single facilitator object, an array of them, or { facilitators: [...] }
+  // (the public page shows prev/next nav when there is more than one).
+  const list = Array.isArray(o) ? o : o && Array.isArray(o.facilitators) ? o.facilitators : null;
+  if (list) {
+    if (!list.length) return "facilitator list cannot be empty";
+    for (const f of list) {
+      const err = validateOneFacilitator(f);
+      if (err) return err;
+    }
+    return null;
+  }
+  return validateOneFacilitator(o);
 }
 function validateCertification(o) {
   if (!o || typeof o !== "object" || Array.isArray(o)) return "certification must be an object";
@@ -189,6 +206,8 @@ function collectColumns(body, { partial }) {
     else cols.currency = c;
   }
   if (body.ratingEnabled !== undefined) cols.rating_enabled = body.ratingEnabled ? 1 : 0;
+  if (body.showAccreditedBy !== undefined) cols.show_accredited_by = body.showAccreditedBy ? 1 : 0;
+  if (body.showRegistration !== undefined) cols.show_registration = body.showRegistration ? 1 : 0;
   if (body.isActive !== undefined) cols.is_active = body.isActive ? 1 : 0;
   if (body.isPublished !== undefined) cols.is_published = body.isPublished ? 1 : 0;
   if (body.isClickable !== undefined) cols.is_clickable = body.isClickable ? 1 : 0;
