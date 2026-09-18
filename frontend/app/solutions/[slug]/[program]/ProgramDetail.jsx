@@ -171,7 +171,9 @@ export default function ProgramDetail() {
       )}
       {program.facilitator && <ProgramFacilitator facilitator={program.facilitator} />}
       {program.certification && <RecognizedSpeaker certification={program.certification} />}
-      {program.showAccreditedBy !== false && <AccreditedBy />}
+      {program.showAccreditedBy !== false && (
+        <AccreditedBy heading={program.accreditedHeading} logos={program.accreditedLogos} />
+      )}
       {(program.pricingHeading || priceStr || program.pricingNote) && (
         <ProgramPricing
           heading={program.pricingHeading}

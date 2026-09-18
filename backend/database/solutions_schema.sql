@@ -103,6 +103,8 @@ CREATE TABLE IF NOT EXISTS solution_programs (
   registration_heading VARCHAR(255) NULL,
   show_accredited_by   TINYINT(1)   NOT NULL DEFAULT 1,   -- show the "Accredited By" section?
   show_registration    TINYINT(1)   NOT NULL DEFAULT 1,   -- show the registration form section?
+  accredited_heading   VARCHAR(255) NULL,                 -- per-program "Accredited By" heading (else global)
+  accredited_logos     JSON         NULL,                 -- per-program logos [{name,logo}] (else global)
   overview             JSON         NULL,
   gains_heading        VARCHAR(255) NULL,
   gains                JSON         NULL,

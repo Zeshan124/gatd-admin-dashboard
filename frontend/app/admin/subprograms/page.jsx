@@ -608,6 +608,10 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [linkUrl, setLinkUrl] = useState(editing?.linkUrl || "");
   const [showAccreditedBy, setShowAccreditedBy] = useState(editing?.showAccreditedBy ?? true);
   const [showRegistration, setShowRegistration] = useState(editing?.showRegistration ?? true);
+  const [accreditedHeading, setAccreditedHeading] = useState(editing?.accreditedHeading || "");
+  const [accreditedLogos, setAccreditedLogos] = useState(
+    Array.isArray(editing?.accreditedLogos) ? editing.accreditedLogos : []
+  );
 
   // Structured section content (edited via friendly forms, not JSON).
   const [facilitators, setFacilitators] = useState(() => {
@@ -694,10 +698,16 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       ratingEnabled,
       showAccreditedBy,
       showRegistration,
+      accreditedHeading: nn(accreditedHeading),
+      accreditedLogos: (accreditedLogos || [])
+        .map((l) => ({ name: (l.name || "").trim(), logo: (l.logo || "").trim() }))
+        .filter((l) => l.logo),
       isClickable: clickable,
       linkUrl: clickable ? nn(linkUrl) : null,
     };
-    if (price !== "") body.priceCents = Math.round(Number(price) * 100);
+    // Always send priceCents so clearing the price persists (null = removed → the
+    // Alternative note shows instead). Omitting it would leave the old price intact.
+    body.priceCents = price === "" ? null : Math.round(Number(price) * 100);
     if (rating !== "") body.rating = Number(rating);
     if (reviews !== "") body.reviews = Number(reviews);
 
@@ -812,6 +822,28 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
           <Toggle label="Accredited By" value={showAccreditedBy} onChange={setShowAccreditedBy} onText="Shown" offText="Hidden" />
           <Toggle label="Registration form" value={showRegistration} onChange={setShowRegistration} onText="Shown" offText="Hidden" />
         </div>
+      </Section>
+
+      <Section title="Accredited By logos" description="Logos for THIS program's “Accredited By” section. Leave both empty to use the global default (Admin → Accredited By). Editing these only affects this program.">
+        <TextField
+          label="Heading (optional)"
+          value={accreditedHeading}
+          onChange={setAccreditedHeading}
+          placeholder="Accredited By"
+          hint="Overrides the global heading for this program only."
+        />
+        <ObjectListEditor
+          label="Logos"
+          value={accreditedLogos}
+          onChange={setAccreditedLogos}
+          addLabel="Add logo"
+          itemLabel="Logo"
+          labeledFields
+          fields={[
+            { key: "name", label: "Name / alt text", placeholder: "e.g. Cambridge International Academics" },
+            { key: "logo", label: "Logo image", type: "image" },
+          ]}
+        />
       </Section>
 
       <Section title="Hero & media">

@@ -10,6 +10,7 @@
 --   * solution_programs clickable/link/rating_enabled/video_url
 --   * solution_programs show_accredited_by/show_registration (section toggles)
 --   * solution_programs pricing_note (alt text when price not finalised)
+--   * solution_programs accredited_heading/accredited_logos (per-program Accredited By)
 --   * company_profile   table              (header Company Profile popup)
 --   * newsletter_subscribers table         (footer newsletter form)
 --   * accreditation_settings table         (Program pages "Accredited By" heading + logos)
@@ -38,7 +39,9 @@ ALTER TABLE solution_programs
   ADD COLUMN IF NOT EXISTS video_url          VARCHAR(500) NULL,
   ADD COLUMN IF NOT EXISTS show_accredited_by TINYINT(1)   NOT NULL DEFAULT 1,
   ADD COLUMN IF NOT EXISTS show_registration  TINYINT(1)   NOT NULL DEFAULT 1,
-  ADD COLUMN IF NOT EXISTS pricing_note       VARCHAR(255) NULL;
+  ADD COLUMN IF NOT EXISTS pricing_note       VARCHAR(255) NULL,
+  ADD COLUMN IF NOT EXISTS accredited_heading VARCHAR(255) NULL,
+  ADD COLUMN IF NOT EXISTS accredited_logos   JSON         NULL;
 
 -- Company Profile (header popup) — singleton settings row ---------------------
 CREATE TABLE IF NOT EXISTS company_profile (

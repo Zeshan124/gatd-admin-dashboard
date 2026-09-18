@@ -53,6 +53,8 @@ function mapProgram(r) {
     registrationHeading: r.registration_heading,
     showAccreditedBy: r.show_accredited_by == null ? true : !!r.show_accredited_by,
     showRegistration: r.show_registration == null ? true : !!r.show_registration,
+    accreditedHeading: r.accredited_heading,
+    accreditedLogos: parseJson(r.accredited_logos),
     overview: parseJson(r.overview),
     gainsHeading: r.gains_heading,
     gains: parseJson(r.gains),
@@ -208,6 +210,22 @@ function collectColumns(body, { partial }) {
   if (body.ratingEnabled !== undefined) cols.rating_enabled = body.ratingEnabled ? 1 : 0;
   if (body.showAccreditedBy !== undefined) cols.show_accredited_by = body.showAccreditedBy ? 1 : 0;
   if (body.showRegistration !== undefined) cols.show_registration = body.showRegistration ? 1 : 0;
+  if (body.accreditedHeading !== undefined) {
+    const v = body.accreditedHeading == null ? "" : String(body.accreditedHeading).trim();
+    if (v.length > 255) fields.accreditedHeading = "Must be ≤ 255 characters";
+    else cols.accredited_heading = v || null;
+  }
+  if (body.accreditedLogos !== undefined) {
+    if (body.accreditedLogos == null) cols.accredited_logos = null;
+    else if (!Array.isArray(body.accreditedLogos)) fields.accreditedLogos = "accreditedLogos must be an array";
+    else {
+      const cleaned = body.accreditedLogos
+        .filter((l) => l && (l.logo || l.name))
+        .map((l) => ({ name: String(l.name || "").trim().slice(0, 200), logo: String(l.logo || "").trim().slice(0, 500) }))
+        .filter((l) => l.logo);
+      cols.accredited_logos = cleaned.length ? toJsonColumn(cleaned) : null; // empty → fall back to global
+    }
+  }
   if (body.isActive !== undefined) cols.is_active = body.isActive ? 1 : 0;
   if (body.isPublished !== undefined) cols.is_published = body.isPublished ? 1 : 0;
   if (body.isClickable !== undefined) cols.is_clickable = body.isClickable ? 1 : 0;

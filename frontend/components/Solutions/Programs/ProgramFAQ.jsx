@@ -42,12 +42,15 @@ export default function ProgramFAQ({
         </h2>
 
         <div className="divide-y divide-slate-200">
-          {items.map((faq) => {
-            const isOpen = openId === faq.id;
+          {items.map((faq, i) => {
+            // CMS-entered FAQs have no `id`, so fall back to the index — otherwise
+            // every item shares the same (undefined) key and they all toggle together.
+            const key = faq.id ?? i;
+            const isOpen = openId === key;
             return (
-              <div key={faq.id}>
+              <div key={key}>
                 <button
-                  onClick={() => setOpenId(isOpen ? null : faq.id)}
+                  onClick={() => setOpenId(isOpen ? null : key)}
                   className="w-full flex items-center justify-between gap-4 py-5 text-left group"
                 >
                   <span className={`text-sm sm:text-base font-bold leading-snug transition-colors ${isOpen ? "text-[#414143]" : "text-[#414143] group-hover:text-[#D52029]"}`}>

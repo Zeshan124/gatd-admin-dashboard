@@ -16,28 +16,36 @@ const DEFAULT_LOGOS = [
   { name: "Cambridge International Academics", logo: "/images/solutions/strategic-hr/7.jpg" },
 ];
 
-export default function AccreditedBy() {
+export default function AccreditedBy({ heading: headingProp, logos: logosProp }) {
   const scrollRef = useRef(null);
-  const [heading, setHeading] = useState(DEFAULT_HEADING);
-  const [logos, setLogos] = useState(DEFAULT_LOGOS);
+  // A program can set its own heading + logos (managed in Admin → Subprograms).
+  // If it doesn't, fall back to the global default (Admin → Accredited By).
+  const hasOwnLogos = Array.isArray(logosProp) && logosProp.length > 0;
+  const [heading, setHeading] = useState(headingProp || DEFAULT_HEADING);
+  const [logos, setLogos] = useState(hasOwnLogos ? logosProp : DEFAULT_LOGOS);
 
-  // Heading + logos are admin-managed (Admin → Accredited By), shared across
-  // all Program pages. Fetched at runtime so edits appear without a rebuild.
   useEffect(() => {
+    // This program has its own logos → use them; no global fetch needed.
+    if (hasOwnLogos) {
+      setHeading(headingProp || DEFAULT_HEADING);
+      setLogos(logosProp);
+      return;
+    }
+    // Otherwise use the global default (a program heading still overrides if set).
     let alive = true;
     publicAccreditationApi
       .get()
       .then((res) => {
         if (!alive) return;
         const d = res?.data || {};
-        if (d.heading) setHeading(d.heading);
+        setHeading(headingProp || d.heading || DEFAULT_HEADING);
         if (Array.isArray(d.logos) && d.logos.length) setLogos(d.logos);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, []);
+  }, [hasOwnLogos, headingProp, logosProp]);
 
   const scroll = (direction) => {
     if (!scrollRef.current) return;
