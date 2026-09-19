@@ -164,7 +164,7 @@ export default function ProgramDetail() {
       )}
       <LayoutSection program={program} />
       {program.focusAreas?.length > 0 && (
-        <CertificationFocus heading={program.focusHeading} focusAreas={program.focusAreas} />
+        <CertificationFocus heading={program.focusHeading} focusAreas={program.focusAreas} leftImage={program.focusImage} />
       )}
       {program.gains?.length > 0 && (
         <WhatYouWillGain heading={program.gainsHeading} gains={program.gains} />

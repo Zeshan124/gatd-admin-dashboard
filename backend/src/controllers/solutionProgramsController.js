@@ -16,7 +16,7 @@ const STRING_FIELDS = [
   ["eyebrow", "eyebrow"], ["banner", "banner"], ["card_image", "cardImage"], ["subheading", "subheading"],
   ["subtext", "subtext"], ["pricing_period", "pricingPeriod"], ["pricing_heading", "pricingHeading"],
   ["pricing_description", "pricingDescription"], ["pricing_note", "pricingNote"], ["brochure", "brochure"], ["registration_heading", "registrationHeading"],
-  ["gains_heading", "gainsHeading"], ["focus_heading", "focusHeading"],
+  ["gains_heading", "gainsHeading"], ["focus_heading", "focusHeading"], ["focus_image", "focusImage"],
 ];
 
 // A link target is safe only if it's a same-site relative path (/…, not //) or an
@@ -60,6 +60,7 @@ function mapProgram(r) {
     gains: parseJson(r.gains),
     focusHeading: r.focus_heading,
     focusAreas: parseJson(r.focus_areas),
+    focusImage: r.focus_image,
     faqs: parseJson(r.faqs),
     facilitator: parseJson(r.facilitator),
     certification: parseJson(r.certification),

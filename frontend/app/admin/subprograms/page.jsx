@@ -595,6 +595,7 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [gains, setGains] = useState(Array.isArray(editing?.gains) ? editing.gains : []);
   const [focusHeading, setFocusHeading] = useState(editing?.focusHeading || "");
   const [focusAreas, setFocusAreas] = useState(Array.isArray(editing?.focusAreas) ? editing.focusAreas : []);
+  const [focusImage, setFocusImage] = useState(editing?.focusImage || "");
   const [faqs, setFaqs] = useState(Array.isArray(editing?.faqs) ? editing.faqs : []);
   const [registrationHeading, setRegistrationHeading] = useState(editing?.registrationHeading || "");
 
@@ -674,6 +675,7 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       pricingNote: nn(pricingNote),
       gainsHeading: nn(gainsHeading),
       focusHeading: nn(focusHeading),
+      focusImage: nn(focusImage),
       registrationHeading: nn(registrationHeading),
       gains: gains
         .filter((g) => g && g.text && g.text.trim())
@@ -915,6 +917,12 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
 
       <Section title="Focus areas">
         <TextField label="Focus heading" value={focusHeading} onChange={setFocusHeading} />
+        <MediaInput
+          label="Certification focus image"
+          value={focusImage}
+          onChange={setFocusImage}
+          kind="image"
+        />
         <ObjectListEditor
           label="Focus areas"
           value={focusAreas}

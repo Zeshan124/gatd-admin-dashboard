@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS solution_programs (
   gains                JSON         NULL,
   focus_heading        VARCHAR(255) NULL,
   focus_areas          JSON         NULL,
+  focus_image          VARCHAR(500) NULL,                 -- "Certification Focuses on Developing" left image
   faqs                 JSON         NULL,
   facilitator          JSON         NULL,
   certification        JSON         NULL,

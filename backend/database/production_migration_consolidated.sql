@@ -11,6 +11,7 @@
 --   * solution_programs show_accredited_by/show_registration (section toggles)
 --   * solution_programs pricing_note (alt text when price not finalised)
 --   * solution_programs accredited_heading/accredited_logos (per-program Accredited By)
+--   * solution_programs focus_image (per-program "Certification Focuses on Developing" image)
 --   * company_profile   table              (header Company Profile popup)
 --   * newsletter_subscribers table         (footer newsletter form)
 --   * accreditation_settings table         (Program pages "Accredited By" heading + logos)
@@ -41,7 +42,8 @@ ALTER TABLE solution_programs
   ADD COLUMN IF NOT EXISTS show_registration  TINYINT(1)   NOT NULL DEFAULT 1,
   ADD COLUMN IF NOT EXISTS pricing_note       VARCHAR(255) NULL,
   ADD COLUMN IF NOT EXISTS accredited_heading VARCHAR(255) NULL,
-  ADD COLUMN IF NOT EXISTS accredited_logos   JSON         NULL;
+  ADD COLUMN IF NOT EXISTS accredited_logos   JSON         NULL,
+  ADD COLUMN IF NOT EXISTS focus_image        VARCHAR(500) NULL;
 
 -- Company Profile (header popup) — singleton settings row ---------------------
 CREATE TABLE IF NOT EXISTS company_profile (

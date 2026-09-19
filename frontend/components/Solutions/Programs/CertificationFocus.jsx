@@ -85,11 +85,10 @@ function NumberBadge({ number, isFirst }) {
   );
 }
 
-export default function CertificationFocus({
-  heading,
-  focusAreas,
-  leftImage = "/images/solutions/strategic-hr/certification_focus1.png",
-}) {
+const DEFAULT_LEFT_IMAGE = "/images/solutions/strategic-hr/certification_focus1.png";
+
+export default function CertificationFocus({ heading, focusAreas, leftImage }) {
+  const imgSrc = leftImage || DEFAULT_LEFT_IMAGE;
   return (
     <section className="bg-white py-12 sm:py-16 md:py-20 border-b border-slate-200">
       <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-16 xl:px-24">
@@ -114,7 +113,7 @@ export default function CertificationFocus({
           {/* Left image */}
           <div className="w-full">
             <Image
-              src={leftImage}
+              src={imgSrc}
               alt="Certification Focus"
               width={640}
               height={560}
