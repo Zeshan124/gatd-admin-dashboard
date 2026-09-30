@@ -12,6 +12,8 @@
 --   * solution_programs pricing_note (alt text when price not finalised)
 --   * solution_programs accredited_heading/accredited_logos (per-program Accredited By)
 --   * solution_programs focus_image (per-program "Certification Focuses on Developing" image)
+--   * solution_programs hero_logos (per-program hero logos, between title & rating)
+--   * parent_solutions eyebrow/banner/middle_* (individual Solution pages)
 --   * company_profile   table              (header Company Profile popup)
 --   * newsletter_subscribers table         (footer newsletter form)
 --   * accreditation_settings table         (Program pages "Accredited By" heading + logos)
@@ -24,6 +26,16 @@ SET NAMES utf8mb4;
 -- Blog viewer count -----------------------------------------------------------
 ALTER TABLE blogs
   ADD COLUMN IF NOT EXISTS views INT NOT NULL DEFAULT 0;
+
+-- Solutions (parent_solutions) — individual Solution pages ---------------------
+ALTER TABLE parent_solutions
+  ADD COLUMN IF NOT EXISTS eyebrow        VARCHAR(120) NULL,
+  ADD COLUMN IF NOT EXISTS banner         VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS middle_image   VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS middle_badge   VARCHAR(255) NULL,
+  ADD COLUMN IF NOT EXISTS middle_heading VARCHAR(255) NULL,
+  ADD COLUMN IF NOT EXISTS middle_body    TEXT         NULL,
+  ADD COLUMN IF NOT EXISTS is_clickable   TINYINT(1)   NOT NULL DEFAULT 1;
 
 -- Programs (child_solutions) --------------------------------------------------
 ALTER TABLE child_solutions
@@ -43,7 +55,8 @@ ALTER TABLE solution_programs
   ADD COLUMN IF NOT EXISTS pricing_note       VARCHAR(255) NULL,
   ADD COLUMN IF NOT EXISTS accredited_heading VARCHAR(255) NULL,
   ADD COLUMN IF NOT EXISTS accredited_logos   JSON         NULL,
-  ADD COLUMN IF NOT EXISTS focus_image        VARCHAR(500) NULL;
+  ADD COLUMN IF NOT EXISTS focus_image        VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS hero_logos         JSON         NULL;
 
 -- Company Profile (header popup) — singleton settings row ---------------------
 CREATE TABLE IF NOT EXISTS company_profile (

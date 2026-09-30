@@ -15,6 +15,13 @@ CREATE TABLE IF NOT EXISTS parent_solutions (
   slug          VARCHAR(120) NOT NULL,
   title         VARCHAR(255) NOT NULL,
   description   TEXT         NULL,
+  eyebrow       VARCHAR(120) NULL,                 -- hero eyebrow (default "Our Solutions")
+  banner        VARCHAR(500) NULL,                 -- hero banner image
+  middle_image  VARCHAR(500) NULL,                 -- middle section: left graphic
+  middle_badge  VARCHAR(255) NULL,                 -- middle section: pill/eyebrow
+  middle_heading VARCHAR(255) NULL,                -- middle section: heading
+  middle_body   TEXT         NULL,                 -- middle section: body paragraphs
+  is_clickable  TINYINT(1)   NOT NULL DEFAULT 1,   -- does the header menu category link to its page?
   is_active     TINYINT(1)   NOT NULL DEFAULT 1,
   sort_order    INT          NOT NULL DEFAULT 0,
   delete_status TINYINT(1)   NOT NULL DEFAULT 0,
@@ -87,6 +94,7 @@ CREATE TABLE IF NOT EXISTS solution_programs (
   card_image           VARCHAR(500) NULL,
   subheading           VARCHAR(255) NULL,
   subtext              TEXT         NULL,
+  hero_logos           JSON         NULL,                 -- logos shown in the hero, between title & rating [{name,logo}]
   rating               DECIMAL(2,1) NULL,
   reviews              INT          NOT NULL DEFAULT 0,
   rating_enabled       TINYINT(1)   NOT NULL DEFAULT 1,   -- show the rating on the public site?

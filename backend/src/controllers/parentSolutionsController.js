@@ -5,12 +5,25 @@ const { sendError } = require("../utils/http");
 
 const SORT_FIELDS = { sort_order: "sort_order", title: "title", created_at: "created_at" };
 
+// Optional string columns for the individual Solution page (hero + middle section).
+const STRING_FIELDS = [
+  ["eyebrow", "eyebrow"], ["banner", "banner"], ["middle_image", "middleImage"],
+  ["middle_badge", "middleBadge"], ["middle_heading", "middleHeading"], ["middle_body", "middleBody"],
+];
+
 function mapParent(r) {
   return {
     id: r.id,
     slug: r.slug,
     title: r.title,
     description: r.description,
+    eyebrow: r.eyebrow,
+    banner: r.banner,
+    middleImage: r.middle_image,
+    middleBadge: r.middle_badge,
+    middleHeading: r.middle_heading,
+    middleBody: r.middle_body,
+    isClickable: r.is_clickable == null ? true : !!r.is_clickable,
     isActive: !!r.is_active,
     sortOrder: r.sort_order,
     childCount: r.child_count != null ? r.child_count : undefined,
@@ -89,11 +102,20 @@ async function create(req, res) {
     const isActive = req.body.isActive === undefined ? 1 : req.body.isActive ? 1 : 0;
     const description = req.body.description != null ? String(req.body.description) : null;
 
+    // Base columns + any optional Solution-page fields (hero/middle section) provided.
+    const cols = { slug, title, description, is_active: isActive, sort_order: sortOrder };
+    for (const [col, key] of STRING_FIELDS) {
+      if (req.body[key] !== undefined) cols[col] = req.body[key] == null ? null : String(req.body[key]);
+    }
+    if (req.body.isClickable !== undefined) cols.is_clickable = req.body.isClickable ? 1 : 0;
+    const colNames = Object.keys(cols);
+    const placeholders = colNames.map(() => "?").join(", ");
+
     let result;
     try {
       result = await query(
-        `INSERT INTO parent_solutions (slug, title, description, is_active, sort_order) VALUES (?, ?, ?, ?, ?)`,
-        [slug, title, description, isActive, sortOrder]
+        `INSERT INTO parent_solutions (${colNames.join(", ")}) VALUES (${placeholders})`,
+        Object.values(cols)
       );
     } catch (err) {
       if (err.code === "ER_DUP_ENTRY") {
@@ -105,12 +127,10 @@ async function create(req, res) {
           [slug]
         );
         if (dead[0]) {
-          await query(
-            `UPDATE parent_solutions
-                SET title = ?, description = ?, is_active = ?, sort_order = ?, delete_status = 0
-              WHERE id = ?`,
-            [title, description, isActive, sortOrder, dead[0].id]
-          );
+          const reviveCols = { ...cols, delete_status: 0 };
+          delete reviveCols.slug; // keep the existing slug
+          const setClause = Object.keys(reviveCols).map((c) => `${c} = ?`).join(", ");
+          await query(`UPDATE parent_solutions SET ${setClause} WHERE id = ?`, [...Object.values(reviveCols), dead[0].id]);
           const revived = await query(`SELECT p.*, ${CHILD_COUNT_SUBQ} FROM parent_solutions p WHERE p.id = ?`, [dead[0].id]);
           return res.status(201).json({ data: mapParent(revived[0]) });
         }
@@ -151,6 +171,10 @@ async function update(req, res) {
       else { sets.push("slug = ?"); params.push(slug); }
     }
     if (req.body.description !== undefined) { sets.push("description = ?"); params.push(req.body.description == null ? null : String(req.body.description)); }
+    for (const [col, key] of STRING_FIELDS) {
+      if (req.body[key] !== undefined) { sets.push(`${col} = ?`); params.push(req.body[key] == null ? null : String(req.body[key])); }
+    }
+    if (req.body.isClickable !== undefined) { sets.push("is_clickable = ?"); params.push(req.body.isClickable ? 1 : 0); }
     if (req.body.isActive !== undefined) { sets.push("is_active = ?"); params.push(req.body.isActive ? 1 : 0); }
     if (req.body.sortOrder !== undefined) {
       const so = parseInt(req.body.sortOrder, 10);

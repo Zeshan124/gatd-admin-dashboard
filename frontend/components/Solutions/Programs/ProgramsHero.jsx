@@ -18,7 +18,10 @@ export default function ProgramsHero({ program }) {
     rating,
     reviews,
     ratingEnabled,
+    heroLogos,
   } = program;
+
+  const logos = Array.isArray(heroLogos) ? heroLogos.filter((l) => l && l.logo) : [];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
@@ -39,6 +42,21 @@ export default function ProgramsHero({ program }) {
             <h1 className="text-4xl sm:text-5xl md:text-5xl font-bold text-[#414143] leading-tight">
               {title}
             </h1>
+
+            {/* Logos — managed per-program in Admin → Subprograms. Hidden when none. */}
+            {logos.length > 0 && (
+              <div className="flex flex-wrap items-center gap-5 sm:gap-8">
+                {logos.map((l, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={l.logo}
+                    alt={l.name || ""}
+                    className="object-contain h-10 sm:h-12 w-auto"
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Rating */}
             {rating != null && ratingEnabled !== false && (

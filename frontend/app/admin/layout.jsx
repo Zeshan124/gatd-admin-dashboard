@@ -12,6 +12,7 @@ const TITLES = {
   "/admin/programs": "Programs",
   "/admin/company-profile": "Company Profile",
   "/admin/accreditation": "Accredited By",
+  "/admin/sitemap": "Sitemap",
   "/admin/newsletter": "Newsletter",
   "/admin/users": "Users",
   "/admin/activity": "Activity",

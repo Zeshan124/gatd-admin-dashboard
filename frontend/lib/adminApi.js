@@ -430,6 +430,14 @@ export const statsApi = {
   overview: () => request("/stats/overview"),
 };
 
+// ── Sitemap ───────────────────────────────────────────────────────────────────
+// The XML sitemap is generated live by the backend at <site>/sitemap.xml; this
+// returns a summary (URL counts + the public URL) for the dashboard.
+export const sitemapApi = {
+  /** → { data: { url, total, counts, generatedAt, sample } } */
+  summary: () => request("/admin/sitemap"),
+};
+
 // ── Auth ────────────────────────────────────────────────────────────────────
 // Signup is gated by a key the backend checks (x-signup-key). It's exposed to
 // the client via NEXT_PUBLIC_SIGNUP_KEY — anything NEXT_PUBLIC_* ends up in the

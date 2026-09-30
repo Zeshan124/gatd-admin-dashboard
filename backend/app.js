@@ -23,6 +23,8 @@ const publicSolutionsRoutes = require("./src/routes/publicSolutionsRoutes");
 const uploadRoutes = require("./src/routes/uploadRoutes");
 const blogRoutes = require("./src/routes/blogRoutes");
 const publicBlogRoutes = require("./src/routes/publicBlogRoutes");
+const sitemapRoutes = require("./src/routes/sitemapRoutes");
+const { sitemapXml } = require("./src/controllers/sitemapController");
 const { sendError } = require("./src/utils/http");
 
 const app = express();
@@ -95,6 +97,10 @@ app.use(
 // --- Routes -----------------------------------------------------------------
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
+// Public XML sitemap (live from the DB). Served at the app root so it can be
+// exposed at https://<site>/sitemap.xml via the frontend .htaccess.
+app.get("/sitemap.xml", sitemapXml);
+
 app.use("/apis/auth", authRoutes);
 app.use("/apis/registrations", registrationsRoutes);
 app.use("/apis/programs", programsRoutes);
@@ -115,6 +121,7 @@ app.use("/apis/public", publicSolutionsRoutes);
 app.use("/apis/public/blogs", publicBlogRoutes);
 app.use("/apis/admin/uploads", uploadRoutes);
 app.use("/apis/admin/blogs", blogRoutes);
+app.use("/apis/admin/sitemap", sitemapRoutes);
 
 // 404 fallback
 app.use((req, res) => sendError(res, 404, "NOT_FOUND", "Resource not found"));

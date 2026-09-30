@@ -9,8 +9,9 @@ import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 // — never javascript:/data: etc. (defence-in-depth; also validated server-side).
 const SAFE_LINK_RE = /^(https?:\/\/|\/(?!\/))/i;
 
-export default function SolutionCategoryRow({ title, items }) {
+export default function SolutionCategoryRow({ title, items, href }) {
   const scrollRef = useRef(null);
+  const titleHref = href && SAFE_LINK_RE.test(href) ? href : null;
 
   const scroll = (dir) => {
     if (!scrollRef.current) return;
@@ -24,7 +25,13 @@ export default function SolutionCategoryRow({ title, items }) {
       {/* Row header */}
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#414143] leading-tight">
-          {title}
+          {titleHref ? (
+            <Link href={titleHref} className="hover:text-[#D52029] transition-colors">
+              {title}
+            </Link>
+          ) : (
+            title
+          )}
         </h2>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button

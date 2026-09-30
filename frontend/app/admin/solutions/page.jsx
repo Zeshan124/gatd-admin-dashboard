@@ -17,6 +17,7 @@ import {
   Check,
 } from "lucide-react";
 import { parentSolutionsApi, API_BASE } from "@/lib/adminApi";
+import { MediaInput } from "@/components/admin/cms/FormKit";
 import { formatDate } from "@/lib/format";
 
 const PAGE_SIZE = 25;
@@ -331,6 +332,15 @@ function SolutionFormDrawer({ editing, onClose, onSaved }) {
     editing?.sortOrder != null ? String(editing.sortOrder) : "0"
   );
   const [active, setActive] = useState(editing?.isActive ?? true);
+  const [clickable, setClickable] = useState(editing?.isClickable ?? true);
+
+  // Individual Solution page content (hero + middle section).
+  const [eyebrow, setEyebrow] = useState(editing?.eyebrow || "");
+  const [banner, setBanner] = useState(editing?.banner || null);
+  const [middleImage, setMiddleImage] = useState(editing?.middleImage || null);
+  const [middleBadge, setMiddleBadge] = useState(editing?.middleBadge || "");
+  const [middleHeading, setMiddleHeading] = useState(editing?.middleHeading || "");
+  const [middleBody, setMiddleBody] = useState(editing?.middleBody || "");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -349,8 +359,15 @@ function SolutionFormDrawer({ editing, onClose, onSaved }) {
       title: title.trim(),
       slug: slug.trim(),
       description: description.trim() || null,
+      eyebrow: eyebrow.trim() || null,
+      banner: banner || null,
+      middleImage: middleImage || null,
+      middleBadge: middleBadge.trim() || null,
+      middleHeading: middleHeading.trim() || null,
+      middleBody: middleBody.trim() || null,
       sortOrder: Number(sortOrder) || 0,
       isActive: active,
+      isClickable: clickable,
     };
     try {
       if (isEdit) await parentSolutionsApi.update(editing.slug, body);
@@ -452,6 +469,70 @@ function SolutionFormDrawer({ editing, onClose, onSaved }) {
               </button>
             </Labeled>
           </div>
+
+          <Labeled label="Clickable in menu" hint="When off, the header category shows as plain text (hover still reveals its Programs) and its title won't link on the Solutions page.">
+            <button
+              type="button"
+              onClick={() => setClickable((v) => !v)}
+              className={`mt-1.5 inline-flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-semibold transition-colors w-full justify-center ${
+                clickable
+                  ? "border-green-200 bg-green-50 text-green-700"
+                  : "border-slate-300 bg-slate-50 text-slate-500"
+              }`}
+            >
+              {clickable ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+              {clickable ? "Clickable (opens its page)" : "Not clickable"}
+            </button>
+          </Labeled>
+
+          {/* ── Individual Solution page content ─────────────────────────── */}
+          <div className="pt-3 mt-1 border-t border-slate-100">
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">Solution page</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Shown when this Solution opens as its own page: hero, a middle section (left image + right content), then its Programs.
+            </p>
+          </div>
+
+          <Labeled label="Hero eyebrow" hint='Small label above the title. Defaults to "Our Solutions".'>
+            <input
+              value={eyebrow}
+              onChange={(e) => setEyebrow(e.target.value)}
+              placeholder="Our Solutions"
+              className="form-input"
+            />
+          </Labeled>
+
+          <MediaInput label="Hero banner" value={banner} onChange={setBanner} />
+
+          <MediaInput label="Middle section image (left)" value={middleImage} onChange={setMiddleImage} />
+
+          <Labeled label="Middle section badge" hint="Small pill shown above the middle heading.">
+            <input
+              value={middleBadge}
+              onChange={(e) => setMiddleBadge(e.target.value)}
+              placeholder="e.g. Advance your expertise."
+              className="form-input"
+            />
+          </Labeled>
+
+          <Labeled label="Middle section heading">
+            <input
+              value={middleHeading}
+              onChange={(e) => setMiddleHeading(e.target.value)}
+              placeholder="e.g. Earn your certification with GATD"
+              className="form-input"
+            />
+          </Labeled>
+
+          <Labeled label="Middle section content" hint="Right-side paragraphs. Leave a blank line between paragraphs.">
+            <textarea
+              value={middleBody}
+              onChange={(e) => setMiddleBody(e.target.value)}
+              rows={6}
+              placeholder={"First paragraph…\n\nSecond paragraph…"}
+              className="form-input resize-y"
+            />
+          </Labeled>
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100">

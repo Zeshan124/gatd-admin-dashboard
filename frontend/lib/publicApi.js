@@ -48,6 +48,9 @@ export const publicSolutionsApi = {
   menu: () => pub("/public/solutions/menu"),
   /** Landing catalog → { data: [{ slug, title, description, children:[...] }] } */
   catalog: () => pub("/public/solutions"),
+  /** One Solution (parent) page → { data: { slug, title, description, eyebrow, banner,
+   *  middleImage, middleBadge, middleHeading, middleBody, children:[...] } } */
+  parent: (slug) => pub(`/public/solutions/${encodeURIComponent(slug)}`),
   /** One Program (child solution) + its Subprograms → { data: {...} }. Pass a
    *  preview token to load a Draft/Hidden item by direct link. */
   child: (slug, preview) => pub(`/public/child-solutions/${encodeURIComponent(slug)}`, preview ? { preview } : undefined),

@@ -43,7 +43,7 @@ async function getOverview(req, res) {
         `SELECT COUNT(*) AS allCount,
                 SUM(created_at >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01')) AS thisMonth,
                 SUM(DATE_FORMAT(created_at, '%Y-%m-%d') = DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-%d')) AS today,
-                COALESCE(SUM(total_amount_cents), 0) AS bookedRevenue,
+                COALESCE(SUM(CASE WHEN status IN ('confirmed','invoiced','paid','enrolled') THEN total_amount_cents ELSE 0 END), 0) AS bookedRevenue,
                 COALESCE(SUM(CASE WHEN status IN ('paid','enrolled') THEN total_amount_cents ELSE 0 END), 0) AS realizedRevenue
            FROM registrations WHERE delete_status = 0 AND is_spam = 0`
       ),

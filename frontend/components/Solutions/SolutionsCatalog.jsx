@@ -78,6 +78,7 @@ export default function SolutionsCatalog() {
           data.map((p) => ({
             id: p.slug,
             title: p.title,
+            isClickable: p.isClickable !== false,
             items: (p.children || []).map((c, i) => ({
               id: c.slug || i,
               title: c.title,
@@ -187,7 +188,12 @@ export default function SolutionsCatalog() {
 
             {/* Category rows */}
             {displayed.map((category) => (
-              <SolutionCategoryRow key={category.id} title={category.title} items={category.items} />
+              <SolutionCategoryRow
+                key={category.id}
+                title={category.title}
+                items={category.items}
+                href={category.isClickable ? `/solutions/${category.id}` : undefined}
+              />
             ))}
 
             {/* Load More */}

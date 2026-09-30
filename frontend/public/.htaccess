@@ -5,6 +5,14 @@
 # posts appear without rebuilding the site.
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  # XML sitemap — served live by the backend API (auto-includes new CMS content).
+  # Exposed here at https://globalatd.com/sitemap.xml. A 302 redirect works on all
+  # shared hosting; if this server has mod_proxy enabled you may instead use the
+  # commented proxy rule below to serve it on this host directly.
+  RewriteRule ^sitemap\.xml$ https://api.globalatd.com/sitemap.xml [R=302,L]
+  # RewriteRule ^sitemap\.xml$ https://api.globalatd.com/sitemap.xml [P,L]
+
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^blog/[^/]+/?$ /blog/__slug__/index.html [L]

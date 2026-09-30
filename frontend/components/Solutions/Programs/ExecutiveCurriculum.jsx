@@ -17,11 +17,11 @@ const defaultDays = [
   },
 ];
 
-function CurriculumCard({ index, session }) {
+function CurriculumCard({ session }) {
   const isRed = session.color === "red";
   return (
     <div
-      className="relative rounded-2xl p-5 pt-8 shadow-xl flex flex-col"
+      className="relative rounded-2xl p-6 shadow-xl flex flex-col"
       style={{
         background: isRed
           ? "linear-gradient(160deg, #e11f28 0%, #D52029 55%, #b01c23 100%)"
@@ -29,15 +29,8 @@ function CurriculumCard({ index, session }) {
         boxShadow: isRed ? "0 16px 32px -12px rgba(213,32,41,0.45)" : "0 16px 32px -12px rgba(0,0,0,0.4)",
       }}
     >
-      {/* White SESSION pill */}
-      <div className="absolute -top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-        <span className="inline-block bg-white rounded-full px-6 py-2 text-sm font-black tracking-wide text-[#414143] shadow-md whitespace-nowrap uppercase">
-          Session {index}
-        </span>
-      </div>
-
       {/* Title */}
-      <h4 className="text-lg font-bold text-white leading-snug mb-3 mt-1">{session.title}</h4>
+      <h4 className="text-lg font-bold text-white leading-snug mb-3">{session.title}</h4>
 
       {/* Bullets */}
       <ul className="space-y-1.5">
@@ -102,7 +95,7 @@ export default function ExecutiveCurriculum({
               {/* One session → full-width card (no empty half); two+ → side by side. */}
               <div className={`grid grid-cols-1 gap-6 ${day.sessions.length > 1 ? "sm:grid-cols-2" : ""}`}>
                 {day.sessions.map((session, si) => (
-                  <CurriculumCard key={si} index={si + 1} session={session} />
+                  <CurriculumCard key={si} session={session} />
                 ))}
               </div>
             </div>

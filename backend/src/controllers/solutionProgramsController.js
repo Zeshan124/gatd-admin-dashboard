@@ -36,6 +36,7 @@ function mapProgram(r) {
     cardImage: r.card_image,
     subheading: r.subheading,
     subtext: r.subtext,
+    heroLogos: parseJson(r.hero_logos),
     rating: r.rating != null ? Number(r.rating) : null,
     reviews: r.reviews,
     ratingEnabled: r.rating_enabled == null ? true : !!r.rating_enabled,
@@ -225,6 +226,17 @@ function collectColumns(body, { partial }) {
         .map((l) => ({ name: String(l.name || "").trim().slice(0, 200), logo: String(l.logo || "").trim().slice(0, 500) }))
         .filter((l) => l.logo);
       cols.accredited_logos = cleaned.length ? toJsonColumn(cleaned) : null; // empty → fall back to global
+    }
+  }
+  if (body.heroLogos !== undefined) {
+    if (body.heroLogos == null) cols.hero_logos = null;
+    else if (!Array.isArray(body.heroLogos)) fields.heroLogos = "heroLogos must be an array";
+    else {
+      const cleaned = body.heroLogos
+        .filter((l) => l && (l.logo || l.name))
+        .map((l) => ({ name: String(l.name || "").trim().slice(0, 200), logo: String(l.logo || "").trim().slice(0, 500) }))
+        .filter((l) => l.logo);
+      cols.hero_logos = cleaned.length ? toJsonColumn(cleaned) : null; // empty → nothing shown in the hero
     }
   }
   if (body.isActive !== undefined) cols.is_active = body.isActive ? 1 : 0;

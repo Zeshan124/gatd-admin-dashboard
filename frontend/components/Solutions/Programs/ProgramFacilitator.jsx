@@ -148,21 +148,19 @@ function FacilitatorModal({ f, bg, onClose }) {
   );
 }
 
-/* ── Circular facilitator card (the slider items) ───────────────────────────── */
+/* ── Facilitator card (the slider items) ────────────────────────────────────── */
 function FacilitatorCard({ f, onClick }) {
   return (
-    <button type="button" onClick={onClick} className="group flex flex-col items-center text-center focus:outline-none">
-      <div className="relative w-24 h-24 sm:w-36 sm:h-36 lg:w-44 lg:h-44 rounded-full overflow-hidden bg-white ring-4 ring-white/70 shadow-xl group-hover:ring-white transition-all duration-300">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={f.image || defaultFacilitator.image}
-          alt={f.name || "Facilitator"}
-          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-        />
-      </div>
-      <p className="mt-3 sm:mt-4 text-sm sm:text-lg font-bold text-white leading-snug">{f.name}</p>
-      {f.role && <p className="hidden sm:block text-xs sm:text-sm text-white/80 mt-1 line-clamp-2 max-w-[15rem]">{f.role}</p>}
-      <span className="mt-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#D52029] bg-white/90 rounded-full px-3 py-1 group-hover:bg-white transition-colors">
+    <button type="button" onClick={onClick} className="group flex flex-col items-center text-center focus:outline-none w-full">
+      {/* Full pre-composed facilitator graphic (portrait + name/title). Fills its
+          grid column (capped) with object-contain so the name & title are never cropped. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={f.image || defaultFacilitator.image}
+        alt={f.name || "Facilitator"}
+        className="w-full max-w-[260px] h-auto object-contain mx-auto group-hover:scale-105 transition-transform duration-300"
+      />
+      <span className="mt-3 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#D52029] bg-white/90 rounded-full px-3 py-1 group-hover:bg-white transition-colors">
         View profile
       </span>
     </button>
@@ -176,11 +174,25 @@ export default function ProgramFacilitator({ facilitator }) {
   const [offset, setOffset] = useState(0);
   const [paused, setPaused] = useState(false);
 
+  // How many cards fit in one row, responsive: 1 (mobile) → 2 → 3 → 4 (desktop).
+  // A fixed-column grid means cards never wrap to a new row; anything beyond
+  // `perView` goes into the auto-carousel instead.
+  const [perView, setPerView] = useState(4);
+  useEffect(() => {
+    const compute = () => {
+      const w = window.innerWidth;
+      setPerView(w < 640 ? 1 : w < 1024 ? 2 : w < 1280 ? 3 : 4);
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, []);
+
   const n = list.length;
-  const auto = n > 3; // auto-slider only when there are more than 3
+  const auto = n > perView; // slider/carousel active when more than one view fits
   const move = (dir) => setOffset((o) => (o + dir + n) % n);
 
-  // Auto-advance the window of 3 (pauses on hover and while the popup is open).
+  // Auto-advance the window (pauses on hover and while the popup is open).
   useEffect(() => {
     if (!auto || paused || selected) return;
     const t = setInterval(() => setOffset((o) => (o + 1) % n), 4000);
@@ -191,8 +203,10 @@ export default function ProgramFacilitator({ facilitator }) {
   if (!multiple) return <SingleFacilitator f={list[0] || defaultFacilitator} />;
 
   const bg = list[0]?.bg || defaultFacilitator.bg;
-  // Show up to 3; when >3, a rotating window of 3 starting at `offset`.
-  const visible = auto ? [0, 1, 2].map((k) => list[(offset + k) % n]) : list.slice(0, 3);
+  // A rotating window of `perView` cards starting at `offset` (else just the first few).
+  const visible = auto
+    ? Array.from({ length: perView }, (_, k) => list[(offset + k) % n])
+    : list.slice(0, perView);
 
   return (
     <section className="relative overflow-hidden py-14 sm:py-16 lg:py-20">
@@ -225,12 +239,16 @@ export default function ProgramFacilitator({ facilitator }) {
           )}
         </div>
 
-        {/* Slider window of up to 3 cards */}
+        {/* Slider window (perView cards; 1-at-a-time carousel on mobile) */}
         <div
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
-          <div key={offset} className="grid grid-cols-3 gap-3 sm:gap-6 justify-items-center animate-[facFade_0.5s_ease]">
+          <div
+            key={offset}
+            className="grid gap-6 sm:gap-8 lg:gap-10 animate-[facFade_0.5s_ease]"
+            style={{ gridTemplateColumns: `repeat(${perView}, minmax(0, 1fr))` }}
+          >
             {visible.map((f, i) => (
               <FacilitatorCard key={`${offset}-${i}`} f={f} onClick={() => setSelected(f)} />
             ))}

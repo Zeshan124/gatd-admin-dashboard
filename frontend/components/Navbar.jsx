@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
@@ -31,6 +31,39 @@ const navLinks = [
 // else (or a null href from a non-clickable Program/Subprogram) renders as text.
 const SAFE_LINK_RE = /^(https?:\/\/|\/(?!\/))/i;
 const safeHref = (h) => (h && SAFE_LINK_RE.test(h) ? h : null);
+
+// A cascading submenu panel. It opens to the RIGHT of its parent by default, but
+// flips to the LEFT when opening right would overflow the viewport's right edge —
+// so on small laptop screens the whole submenu stays on-screen. Measured once on
+// mount (the panel only ever renders on hover, i.e. client-side, so no SSR issue).
+function Flyout({ width, className = "", children }) {
+  const ref = useRef(null);
+  const [side, setSide] = useState("left-full");
+  const [style, setStyle] = useState(undefined);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    // Horizontal: flip to the left when opening right overflows the viewport.
+    if (r.right > window.innerWidth - 8) setSide("right-full");
+    // Vertical: shift up when the panel runs past the bottom edge (only as far
+    // as there's room above, so the top never clips).
+    const overflowY = r.bottom - (window.innerHeight - 8);
+    if (overflowY > 0) {
+      const shift = Math.min(Math.ceil(overflowY), Math.max(0, Math.floor(r.top - 8)));
+      if (shift > 0) setStyle({ transform: `translateY(-${shift}px)` });
+    }
+  }, []);
+  return (
+    <div
+      ref={ref}
+      style={style}
+      className={`absolute top-0 ${side} ${width} bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 // A dropdown row: a real <Link> when it has a navigable href, otherwise plain,
 // non-clickable text (honours the admin "clickable" toggle for Programs/Subprograms).
@@ -94,6 +127,7 @@ export default function Navbar() {
   // expects (category/label). Solution → Program → Subprogram.
   const solutionsMenu = solutionsTree.map((p) => ({
     category: p.title,
+    href: safeHref(p.href), // main category opens its own Solution page
     items: (p.items || []).map((c) => ({
       label: c.title,
       href: safeHref(c.href),
@@ -170,7 +204,11 @@ export default function Navbar() {
                             }}
                             onMouseLeave={() => setHoveredCategory(null)}
                           >
-                            <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-slate-700 hover:text-[#D52029] hover:bg-red-50 transition-colors cursor-default group">
+                            <NavRow
+                              href={group.href}
+                              onClick={closeAll}
+                              className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-slate-700 hover:text-[#D52029] hover:bg-red-50 transition-colors group"
+                            >
                               <span className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#D52029] transition-colors shrink-0" />
                                 {group.category}
@@ -178,11 +216,11 @@ export default function Navbar() {
                               {group.items.length > 0 && (
                                 <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-[#D52029]" />
                               )}
-                            </div>
+                            </NavRow>
 
                             {/* Level 2 — Items flyout */}
                             {hoveredCategory === group.category && group.items.length > 0 && (
-                              <div className="absolute left-full top-0 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
+                              <Flyout width="w-64">
                                 {group.items.map((item) => (
                                   <div
                                     key={item.label}
@@ -211,7 +249,7 @@ export default function Navbar() {
                                     {/* Level 3 — Children flyout */}
                                     {item.children?.length > 0 &&
                                       hoveredItem === item.label && (
-                                        <div className="absolute left-full top-0 w-72 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 max-h-[70vh] overflow-y-auto">
+                                        <Flyout width="w-72" className="max-h-[70vh] overflow-y-auto">
                                           {item.href && (
                                             <div className="px-3 py-1.5 mb-1 border-b border-slate-100">
                                               <Link
@@ -236,11 +274,11 @@ export default function Navbar() {
                                               </span>
                                             </NavRow>
                                           ))}
-                                        </div>
+                                        </Flyout>
                                       )}
                                   </div>
                                 ))}
-                              </div>
+                              </Flyout>
                             )}
                           </div>
                         ))}
@@ -374,27 +412,32 @@ export default function Navbar() {
                         )}
                         {solutionsMenu.map((group) => (
                           <div key={group.category}>
-                            {/* Category */}
-                            <button
-                              onClick={() =>
-                                setMobileCategoryOpen(
-                                  mobileCategoryOpen === group.category
-                                    ? null
-                                    : group.category,
-                                )
-                              }
-                              className="flex items-center justify-between w-full px-3 py-2.5 text-sm text-slate-700 hover:text-[#D52029] hover:bg-red-50 rounded-lg transition-colors group"
-                            >
-                              <span className="flex items-center gap-2">
+                            {/* Category — label opens the Solution page; chevron expands its Programs */}
+                            <div className="flex items-center">
+                              <NavRow
+                                href={group.href}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex-1 flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 hover:text-[#D52029] hover:bg-red-50 rounded-lg transition-colors group"
+                              >
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-[#D52029] transition-colors shrink-0" />
                                 {group.category}
-                              </span>
+                              </NavRow>
                               {group.items.length > 0 && (
-                                <ChevronDown
-                                  className={`w-3 h-3 transition-transform ${mobileCategoryOpen === group.category ? "rotate-180 text-[#D52029]" : ""}`}
-                                />
+                                <button
+                                  onClick={() =>
+                                    setMobileCategoryOpen(
+                                      mobileCategoryOpen === group.category ? null : group.category,
+                                    )
+                                  }
+                                  aria-label="Toggle programs"
+                                  className="p-2 text-slate-400 hover:text-[#D52029]"
+                                >
+                                  <ChevronDown
+                                    className={`w-3.5 h-3.5 transition-transform ${mobileCategoryOpen === group.category ? "rotate-180 text-[#D52029]" : ""}`}
+                                  />
+                                </button>
                               )}
-                            </button>
+                            </div>
 
                             {mobileCategoryOpen === group.category && (
                               <div className="ml-4 pl-3 border-l-2 border-slate-100 space-y-0.5 mb-1">

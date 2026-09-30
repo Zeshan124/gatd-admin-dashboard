@@ -47,10 +47,30 @@ export default function AccreditedBy({ heading: headingProp, logos: logosProp })
     };
   }, [hasOwnLogos, headingProp, logosProp]);
 
+  // 3+ logos → horizontal slider with arrows + autoplay. 1–2 logos → centered, static.
+  const isSlider = logos.length >= 3;
+  const [paused, setPaused] = useState(false);
+
   const scroll = (direction) => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: direction === "left" ? -250 : 250, behavior: "smooth" });
   };
+
+  // Autoplay every 2s (slider only); loops back to the start at the end. Pauses on hover.
+  useEffect(() => {
+    if (!isSlider || paused) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const id = setInterval(() => {
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (el.scrollLeft >= maxScroll - 4) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: 220, behavior: "smooth" });
+      }
+    }, 2000);
+    return () => clearInterval(id);
+  }, [isSlider, paused, logos.length]);
 
   if (!logos.length) return null;
 
@@ -58,51 +78,60 @@ export default function AccreditedBy({ heading: headingProp, logos: logosProp })
     <section className="bg-white py-12 sm:py-16 border-t border-slate-100">
       <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8 sm:mb-10">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#414143]">
+        {/* Heading + logos on the same row (stacks on mobile for readability) */}
+        <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
+
+          <h2 className="shrink-0 text-3xl sm:text-4xl md:text-5xl font-bold text-[#414143]">
             {heading}
           </h2>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => scroll("left")}
-              className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200"
-              aria-label="Previous"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => scroll("right")}
-              className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200"
-              aria-label="Next"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+          {/* Logos: centered when 1–2, scrolling slider when 3+ */}
+          <div
+            ref={scrollRef}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            className={`flex-1 min-w-0 flex items-center gap-10 sm:gap-14 pb-2 ${
+              isSlider ? "overflow-x-auto scrollbar-hide scroll-smooth justify-start" : "justify-center flex-wrap"
+            }`}
+          >
+            {logos.map((item, i) => (
+              <div
+                key={i}
+                className="shrink-0 flex items-center justify-center h-20 sm:h-24"
+                style={{ minWidth: "160px" }}
+              >
+                {item.logo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.logo}
+                    alt={item.name || ""}
+                    className="object-contain max-h-16 sm:max-h-20 w-auto transition-transform duration-300 hover:scale-105"
+                  />
+                )}
+              </div>
+            ))}
           </div>
-        </div>
 
-        {/* Logos Slider */}
-        <div
-          ref={scrollRef}
-          className="flex items-center gap-10 sm:gap-14 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
-        >
-          {logos.map((item, i) => (
-            <div
-              key={i}
-              className="flex-shrink-0 flex items-center justify-center h-20 sm:h-24"
-              style={{ minWidth: "190px" }}
-            >
-              {item.logo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.logo}
-                  alt={item.name || ""}
-                  className="object-contain max-h-16 sm:max-h-20 w-auto transition-transform duration-300 hover:scale-105"
-                />
-              )}
+          {/* Arrows only when it's a slider */}
+          {isSlider && (
+            <div className="shrink-0 flex items-center gap-2 self-end md:self-center">
+              <button
+                onClick={() => scroll("left")}
+                className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200"
+                aria-label="Previous"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => scroll("right")}
+                className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200"
+                aria-label="Next"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
-          ))}
+          )}
+
         </div>
 
       </div>

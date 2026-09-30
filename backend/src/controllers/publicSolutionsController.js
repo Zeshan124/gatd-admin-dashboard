@@ -22,7 +22,7 @@ function isPreview(req) {
 async function catalog(req, res) {
   try {
     const parents = await query(
-      `SELECT id, slug, title, description FROM parent_solutions
+      `SELECT id, slug, title, description, is_clickable FROM parent_solutions
         WHERE is_active = 1 AND delete_status = 0 ORDER BY sort_order ASC, title ASC`
     );
     const children = await query(
@@ -49,7 +49,9 @@ async function catalog(req, res) {
     }
 
     const data = parents.map((p) => ({
-      slug: p.slug, title: p.title, description: p.description, children: byParent.get(p.id) || [],
+      slug: p.slug, title: p.title, description: p.description,
+      isClickable: p.is_clickable == null ? true : !!p.is_clickable,
+      children: byParent.get(p.id) || [],
     }));
     return res.json({ data });
   } catch (err) {
@@ -64,7 +66,7 @@ async function catalog(req, res) {
 async function menu(req, res) {
   try {
     const parents = await query(
-      `SELECT id, slug, title FROM parent_solutions
+      `SELECT id, slug, title, is_clickable FROM parent_solutions
         WHERE is_active = 1 AND delete_status = 0 ORDER BY sort_order ASC, title ASC`
     );
     const children = await query(
@@ -109,7 +111,9 @@ async function menu(req, res) {
     const data = parents.map((p) => ({
       slug: p.slug,
       title: p.title,
-      href: `/solutions`,
+      // Admin "clickable" toggle: null href → header renders the category as plain
+      // text (hover still reveals its Programs).
+      href: p.is_clickable ? `/solutions/${p.slug}` : null,
       items: childrenByParent.get(p.id) || [],
     }));
     return res.json({ data });
@@ -123,24 +127,32 @@ async function menu(req, res) {
 async function parent(req, res) {
   try {
     const parents = await query(
-      `SELECT id, slug, title, description FROM parent_solutions
+      `SELECT id, slug, title, description, eyebrow, banner, middle_image, middle_badge, middle_heading, middle_body
+         FROM parent_solutions
         WHERE slug = ? AND is_active = 1 AND delete_status = 0 LIMIT 1`,
       [req.params.parentSlug]
     );
     if (!parents[0]) return sendError(res, 404, "NOT_FOUND", "Solution not found");
 
     const children = await query(
-      `SELECT slug, title, description, eyebrow, card_image, rating, reviews, rating_enabled FROM child_solutions
+      `SELECT slug, title, description, eyebrow, card_image, rating, reviews, rating_enabled, is_clickable, link_url
+         FROM child_solutions
         WHERE parent_solution_id = ? AND is_active = 1 AND delete_status = 0 ORDER BY sort_order ASC, title ASC`,
       [parents[0].id]
     );
+    const p = parents[0];
     return res.json({
       data: {
-        slug: parents[0].slug, title: parents[0].title, description: parents[0].description,
+        slug: p.slug, title: p.title, description: p.description,
+        eyebrow: p.eyebrow, banner: p.banner,
+        middleImage: p.middle_image, middleBadge: p.middle_badge,
+        middleHeading: p.middle_heading, middleBody: p.middle_body,
         children: children.map((c) => ({
           slug: c.slug, title: c.title, description: c.description, eyebrow: c.eyebrow,
           cardImage: c.card_image, rating: c.rating != null ? Number(c.rating) : null, reviews: c.reviews,
           ratingEnabled: c.rating_enabled == null ? true : !!c.rating_enabled,
+          // Respect the admin "clickable" toggle — null href renders as a non-link card.
+          href: c.is_clickable ? (c.link_url || `/solutions/${c.slug}`) : null,
         })),
       },
     });

@@ -613,6 +613,9 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [accreditedLogos, setAccreditedLogos] = useState(
     Array.isArray(editing?.accreditedLogos) ? editing.accreditedLogos : []
   );
+  const [heroLogos, setHeroLogos] = useState(
+    Array.isArray(editing?.heroLogos) ? editing.heroLogos : []
+  );
 
   // Structured section content (edited via friendly forms, not JSON).
   const [facilitators, setFacilitators] = useState(() => {
@@ -702,6 +705,9 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       showRegistration,
       accreditedHeading: nn(accreditedHeading),
       accreditedLogos: (accreditedLogos || [])
+        .map((l) => ({ name: (l.name || "").trim(), logo: (l.logo || "").trim() }))
+        .filter((l) => l.logo),
+      heroLogos: (heroLogos || [])
         .map((l) => ({ name: (l.name || "").trim(), logo: (l.logo || "").trim() }))
         .filter((l) => l.logo),
       isClickable: clickable,
@@ -843,6 +849,21 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
           labeledFields
           fields={[
             { key: "name", label: "Name / alt text", placeholder: "e.g. Cambridge International Academics" },
+            { key: "logo", label: "Logo image", type: "image" },
+          ]}
+        />
+      </Section>
+
+      <Section title="Hero logos" description="Logos shown in the program hero, between the title and the rating. Managed per program — leave empty to show nothing there.">
+        <ObjectListEditor
+          label="Logos"
+          value={heroLogos}
+          onChange={setHeroLogos}
+          addLabel="Add logo"
+          itemLabel="Logo"
+          labeledFields
+          fields={[
+            { key: "name", label: "Name / alt text", placeholder: "e.g. Malaysia MADANI" },
             { key: "logo", label: "Logo image", type: "image" },
           ]}
         />

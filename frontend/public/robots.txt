@@ -1,0 +1,7 @@
+# GATD — robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+
+Sitemap: https://globalatd.com/sitemap.xml

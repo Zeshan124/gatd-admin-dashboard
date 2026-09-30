@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+// import { usePathname } from "next/navigation"; // MADANI footer logo (commented out)
 
 // Newsletter subscription endpoint — reuses the configured API base.
 const NEWSLETTER_API =
@@ -74,9 +74,9 @@ export default function Footer() {
 
   // Client-specific: show the Malaysia MADANI logo (after the GATD logo) on the
   // MADANI programme page. Matched by the subprogram slug, so it works under any
-  // parent Solution/Program.
-  const pathname = usePathname();
-  const showMadani = (pathname || "").includes("madani-leadership-for-public-sector-transformation");
+  // parent Solution/Program. — Commented out per request.
+  // const pathname = usePathname();
+  // const showMadani = (pathname || "").includes("madani-leadership-for-public-sector-transformation");
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
@@ -120,26 +120,19 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
           {/* Col 1 — Logo + Description */}
           <div className="sm:col-span-2 lg:col-span-1">
-            {/* Logo Box(es) — GATD, plus the MADANI logo on the MADANI page.
-                When both show, they share one row (each an equal half) and scale
-                down to fit the column, so they never wrap or overflow. */}
+            {/* Logo Box — GATD */}
             <div className="flex items-center gap-3 mb-5">
-              <div
-                className={
-                  showMadani
-                    ? "bg-white rounded-lg px-3 py-2 flex-1 min-w-0 flex items-center justify-center"
-                    : "inline-block bg-white rounded-xl px-4 py-3"
-                }
-              >
+              <div className="inline-block bg-white rounded-xl px-4 py-3">
                 <Image
                   src="/images/home/logo-footer.svg"
                   alt="GATD Logo"
                   width={180}
                   height={60}
-                  className={showMadani ? "object-contain h-9 w-auto max-w-full" : "object-contain h-12 w-auto"}
+                  className="object-contain h-12 w-auto"
                   priority
                 />
               </div>
+              {/* MADANI logo (shown after GATD on the MADANI page) — commented out per request.
               {showMadani && (
                 <div className="bg-white rounded-lg px-3 py-2 flex-1 min-w-0 flex items-center justify-center">
                   <Image
@@ -151,6 +144,7 @@ export default function Footer() {
                   />
                 </div>
               )}
+              */}
             </div>
 
             {/* Description */}

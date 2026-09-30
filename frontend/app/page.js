@@ -8,6 +8,7 @@ import WhoWeAre from "@/components/Home/WhoWeAre";
 import Testimonials from "@/components/Home/Testimonials";
 import LatestUpdates from "@/components/Home/LatestUpdates";
 import WhatWillLearningDo from "@/components/Home/WhatWillLearningDo";
+import StrategicPartnership from "@/components/Home/StrategicPartnership";
 import CommitmentBanner from "@/components/Home/CommitmentBanner";
 
 export default function Home() {
@@ -23,6 +24,7 @@ export default function Home() {
       <Testimonials />
       <LatestUpdates />
       <WhatWillLearningDo />
+      <StrategicPartnership />
       <CommitmentBanner />
     </main>
   );
