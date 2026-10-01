@@ -391,6 +391,12 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
   const [active, setActive] = useState(editing?.isActive ?? true);
   const [clickable, setClickable] = useState(editing?.isClickable ?? true);
   const [linkUrl, setLinkUrl] = useState(editing?.linkUrl || "");
+  const [commitmentBannerEyebrow, setCommitmentBannerEyebrow] = useState(editing?.commitmentBannerEyebrow || "");
+  const [commitmentBannerHeading, setCommitmentBannerHeading] = useState(editing?.commitmentBannerHeading || "");
+  const [commitmentCtaText, setCommitmentCtaText] = useState(editing?.commitmentCtaText || "");
+  const [commitmentCtaUrl, setCommitmentCtaUrl] = useState(editing?.commitmentCtaUrl || "");
+  const [showCommitmentBanner, setShowCommitmentBanner] = useState(editing?.showCommitmentBanner ?? true);
+  const [showCommitmentCta, setShowCommitmentCta] = useState(editing?.showCommitmentCta ?? true);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -434,6 +440,12 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
       ratingEnabled,
       isClickable: clickable,
       linkUrl: clickable ? nn(linkUrl) : null,
+      commitmentBannerEyebrow: nn(commitmentBannerEyebrow),
+      commitmentBannerHeading: nn(commitmentBannerHeading),
+      commitmentCtaText: nn(commitmentCtaText),
+      commitmentCtaUrl: nn(commitmentCtaUrl),
+      showCommitmentBanner,
+      showCommitmentCta,
     };
     if (rating !== "") body.rating = Number(rating);
     if (reviews !== "") body.reviews = Number(reviews);
@@ -605,6 +617,17 @@ function ProgramFormDrawer({ editing, parents, onClose, onSaved }) {
           onText="Shown"
           offText="Hidden"
         />
+      </Section>
+
+      <Section title="Commitment banner" description="Manage this banner independently for this Program page.">
+        <Toggle label="Show section" value={showCommitmentBanner} onChange={setShowCommitmentBanner} onText="Shown" offText="Hidden" />
+        <Toggle label="Show button" value={showCommitmentCta} onChange={setShowCommitmentCta} onText="Shown" offText="Hidden" />
+        <TextField label="Eyebrow" value={commitmentBannerEyebrow} onChange={setCommitmentBannerEyebrow} placeholder="Global association for training and development" />
+        <TextArea label="Heading" value={commitmentBannerHeading} onChange={setCommitmentBannerHeading} rows={3} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TextField label="Button text" value={commitmentCtaText} onChange={setCommitmentCtaText} placeholder="Get In Touch" />
+          <TextField label="Button link" value={commitmentCtaUrl} onChange={setCommitmentCtaUrl} placeholder="/contact" hint="Use a site path or https:// URL." />
+        </div>
       </Section>
     </DrawerShell>
   );

@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS company_profile (
   description  TEXT         NULL,                 -- helper/privacy text
   button_label VARCHAR(80)  NULL,                 -- header button text
   pdf_url      VARCHAR(500) NULL,                 -- the profile PDF delivered on submit
+  home_commitment_banner_eyebrow VARCHAR(160) NULL,
+  home_commitment_banner_heading VARCHAR(500) NULL,
+  home_commitment_cta_text VARCHAR(100) NULL,
+  home_commitment_cta_url VARCHAR(500) NULL,
+  home_show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,
+  home_show_commitment_cta TINYINT(1) NOT NULL DEFAULT 0,
   updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -9,7 +9,12 @@ const SORT_FIELDS = { sort_order: "sort_order", title: "title", created_at: "cre
 const STRING_FIELDS = [
   ["eyebrow", "eyebrow"], ["banner", "banner"], ["middle_image", "middleImage"],
   ["middle_badge", "middleBadge"], ["middle_heading", "middleHeading"], ["middle_body", "middleBody"],
+  ["commitment_banner_eyebrow", "commitmentBannerEyebrow"],
+  ["commitment_banner_heading", "commitmentBannerHeading"],
+  ["commitment_cta_text", "commitmentCtaText"],
 ];
+
+const SAFE_LINK_RE = /^(https?:\/\/|\/(?!\/))/i;
 
 function mapParent(r) {
   return {
@@ -23,6 +28,12 @@ function mapParent(r) {
     middleBadge: r.middle_badge,
     middleHeading: r.middle_heading,
     middleBody: r.middle_body,
+    commitmentBannerEyebrow: r.commitment_banner_eyebrow,
+    commitmentBannerHeading: r.commitment_banner_heading,
+    commitmentCtaText: r.commitment_cta_text,
+    commitmentCtaUrl: r.commitment_cta_url,
+    showCommitmentBanner: r.show_commitment_banner == null ? true : !!r.show_commitment_banner,
+    showCommitmentCta: r.show_commitment_cta == null ? true : !!r.show_commitment_cta,
     isClickable: r.is_clickable == null ? true : !!r.is_clickable,
     isActive: !!r.is_active,
     sortOrder: r.sort_order,
@@ -97,7 +108,9 @@ async function create(req, res) {
     if (!isValidSlug(slug)) fields.slug = "Slug must be kebab-case (a-z, 0-9, hyphens), ≤120 chars";
     const sortOrder = req.body.sortOrder != null ? parseInt(req.body.sortOrder, 10) : 0;
     if (Number.isNaN(sortOrder) || sortOrder < 0) fields.sortOrder = "sortOrder must be an integer ≥ 0";
-    if (Object.keys(fields).length) return sendError(res, 422, "VALIDATION_ERROR", "One or more fields are invalid", fields);
+      if (Object.keys(fields).length) {
+        return sendError(res, 422, "VALIDATION_ERROR", "One or more fields are invalid", fields);
+      }
 
     const isActive = req.body.isActive === undefined ? 1 : req.body.isActive ? 1 : 0;
     const description = req.body.description != null ? String(req.body.description) : null;
@@ -107,7 +120,17 @@ async function create(req, res) {
     for (const [col, key] of STRING_FIELDS) {
       if (req.body[key] !== undefined) cols[col] = req.body[key] == null ? null : String(req.body[key]);
     }
+    if (req.body.commitmentCtaUrl != null && String(req.body.commitmentCtaUrl).trim()) {
+      const url = String(req.body.commitmentCtaUrl).trim();
+      if (url.length > 500 || !SAFE_LINK_RE.test(url)) fields.commitmentCtaUrl = "Use a relative path or an http(s) URL (up to 500 characters)";
+      else cols.commitment_cta_url = url;
+    } else if (req.body.commitmentCtaUrl !== undefined) {
+      cols.commitment_cta_url = null;
+    }
+    if (req.body.showCommitmentBanner !== undefined) cols.show_commitment_banner = req.body.showCommitmentBanner ? 1 : 0;
+    if (req.body.showCommitmentCta !== undefined) cols.show_commitment_cta = req.body.showCommitmentCta ? 1 : 0;
     if (req.body.isClickable !== undefined) cols.is_clickable = req.body.isClickable ? 1 : 0;
+    if (Object.keys(fields).length) return sendError(res, 422, "VALIDATION_ERROR", "One or more fields are invalid", fields);
     const colNames = Object.keys(cols);
     const placeholders = colNames.map(() => "?").join(", ");
 
@@ -174,6 +197,14 @@ async function update(req, res) {
     for (const [col, key] of STRING_FIELDS) {
       if (req.body[key] !== undefined) { sets.push(`${col} = ?`); params.push(req.body[key] == null ? null : String(req.body[key])); }
     }
+    if (req.body.commitmentCtaUrl !== undefined) {
+      const url = req.body.commitmentCtaUrl == null ? "" : String(req.body.commitmentCtaUrl).trim();
+      if (!url) { sets.push("commitment_cta_url = ?"); params.push(null); }
+      else if (url.length > 500 || !SAFE_LINK_RE.test(url)) fields.commitmentCtaUrl = "Use a relative path or an http(s) URL (up to 500 characters)";
+      else { sets.push("commitment_cta_url = ?"); params.push(url); }
+    }
+    if (req.body.showCommitmentBanner !== undefined) { sets.push("show_commitment_banner = ?"); params.push(req.body.showCommitmentBanner ? 1 : 0); }
+    if (req.body.showCommitmentCta !== undefined) { sets.push("show_commitment_cta = ?"); params.push(req.body.showCommitmentCta ? 1 : 0); }
     if (req.body.isClickable !== undefined) { sets.push("is_clickable = ?"); params.push(req.body.isClickable ? 1 : 0); }
     if (req.body.isActive !== undefined) { sets.push("is_active = ?"); params.push(req.body.isActive ? 1 : 0); }
     if (req.body.sortOrder !== undefined) {

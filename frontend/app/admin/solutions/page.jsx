@@ -17,7 +17,7 @@ import {
   Check,
 } from "lucide-react";
 import { parentSolutionsApi, API_BASE } from "@/lib/adminApi";
-import { MediaInput } from "@/components/admin/cms/FormKit";
+import { MediaInput, TextField, TextArea, Toggle } from "@/components/admin/cms/FormKit";
 import { formatDate } from "@/lib/format";
 
 const PAGE_SIZE = 25;
@@ -341,6 +341,12 @@ function SolutionFormDrawer({ editing, onClose, onSaved }) {
   const [middleBadge, setMiddleBadge] = useState(editing?.middleBadge || "");
   const [middleHeading, setMiddleHeading] = useState(editing?.middleHeading || "");
   const [middleBody, setMiddleBody] = useState(editing?.middleBody || "");
+  const [commitmentBannerEyebrow, setCommitmentBannerEyebrow] = useState(editing?.commitmentBannerEyebrow || "");
+  const [commitmentBannerHeading, setCommitmentBannerHeading] = useState(editing?.commitmentBannerHeading || "");
+  const [commitmentCtaText, setCommitmentCtaText] = useState(editing?.commitmentCtaText || "");
+  const [commitmentCtaUrl, setCommitmentCtaUrl] = useState(editing?.commitmentCtaUrl || "");
+  const [showCommitmentBanner, setShowCommitmentBanner] = useState(editing?.showCommitmentBanner ?? true);
+  const [showCommitmentCta, setShowCommitmentCta] = useState(editing?.showCommitmentCta ?? true);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -365,6 +371,12 @@ function SolutionFormDrawer({ editing, onClose, onSaved }) {
       middleBadge: middleBadge.trim() || null,
       middleHeading: middleHeading.trim() || null,
       middleBody: middleBody.trim() || null,
+      commitmentBannerEyebrow: commitmentBannerEyebrow.trim() || null,
+      commitmentBannerHeading: commitmentBannerHeading.trim() || null,
+      commitmentCtaText: commitmentCtaText.trim() || null,
+      commitmentCtaUrl: commitmentCtaUrl.trim() || null,
+      showCommitmentBanner,
+      showCommitmentCta,
       sortOrder: Number(sortOrder) || 0,
       isActive: active,
       isClickable: clickable,
@@ -533,6 +545,16 @@ function SolutionFormDrawer({ editing, onClose, onSaved }) {
               className="form-input resize-y"
             />
           </Labeled>
+
+          <div className="pt-3 mt-1 border-t border-slate-100 space-y-4">
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">Commitment banner</p>
+            <Toggle label="Show section" value={showCommitmentBanner} onChange={setShowCommitmentBanner} onText="Shown" offText="Hidden" />
+            <Toggle label="Show button" value={showCommitmentCta} onChange={setShowCommitmentCta} onText="Shown" offText="Hidden" />
+            <TextField label="Eyebrow" value={commitmentBannerEyebrow} onChange={setCommitmentBannerEyebrow} placeholder="Global association for training and development" />
+            <TextArea label="Heading" value={commitmentBannerHeading} onChange={setCommitmentBannerHeading} rows={3} />
+            <TextField label="Button text" value={commitmentCtaText} onChange={setCommitmentCtaText} placeholder="Get In Touch" />
+            <TextField label="Button link" value={commitmentCtaUrl} onChange={setCommitmentCtaUrl} placeholder="/contact" hint="Use a site path or https:// URL." />
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100">

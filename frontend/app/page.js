@@ -25,7 +25,7 @@ export default function Home() {
       <LatestUpdates />
       <WhatWillLearningDo />
       <StrategicPartnership />
-      <CommitmentBanner />
+      <CommitmentBanner settingsKey="home" />
     </main>
   );
 }

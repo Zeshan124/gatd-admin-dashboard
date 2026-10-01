@@ -173,7 +173,15 @@ export default function SolutionDetail() {
           <SolutionProgrammes programmes={solution.programmes} />
         )}
 
-        <CommitmentBanner />
+        {solution.showCommitmentBanner !== false && (
+          <CommitmentBanner
+            showCta={solution.showCommitmentCta !== false}
+            ctaText={solution.commitmentCtaText}
+            ctaUrl={solution.commitmentCtaUrl}
+            eyebrow={solution.commitmentBannerEyebrow}
+            heading={solution.commitmentBannerHeading}
+          />
+        )}
       </main>
     );
   }
@@ -214,7 +222,15 @@ export default function SolutionDetail() {
       {solution.whyImage && (
         <WhyWorthInvestment heading={solution.whyHeading} badge={solution.whyBadge} centerImage={solution.whyImage} />
       )}
-      <CommitmentBanner />
+      {solution.showCommitmentBanner !== false && (
+        <CommitmentBanner
+          showCta={solution.showCommitmentCta !== false}
+          ctaText={solution.commitmentCtaText}
+          ctaUrl={solution.commitmentCtaUrl}
+          eyebrow={solution.commitmentBannerEyebrow}
+          heading={solution.commitmentBannerHeading}
+        />
+      )}
     </main>
   );
 }

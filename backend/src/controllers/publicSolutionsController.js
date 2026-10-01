@@ -127,7 +127,9 @@ async function menu(req, res) {
 async function parent(req, res) {
   try {
     const parents = await query(
-      `SELECT id, slug, title, description, eyebrow, banner, middle_image, middle_badge, middle_heading, middle_body
+            `SELECT id, slug, title, description, eyebrow, banner, middle_image, middle_badge, middle_heading, middle_body,
+              commitment_banner_eyebrow, commitment_banner_heading, commitment_cta_text, commitment_cta_url,
+              show_commitment_banner, show_commitment_cta
          FROM parent_solutions
         WHERE slug = ? AND is_active = 1 AND delete_status = 0 LIMIT 1`,
       [req.params.parentSlug]
@@ -147,6 +149,12 @@ async function parent(req, res) {
         eyebrow: p.eyebrow, banner: p.banner,
         middleImage: p.middle_image, middleBadge: p.middle_badge,
         middleHeading: p.middle_heading, middleBody: p.middle_body,
+        commitmentBannerEyebrow: p.commitment_banner_eyebrow,
+        commitmentBannerHeading: p.commitment_banner_heading,
+        commitmentCtaText: p.commitment_cta_text,
+        commitmentCtaUrl: p.commitment_cta_url,
+        showCommitmentBanner: p.show_commitment_banner == null ? true : !!p.show_commitment_banner,
+        showCommitmentCta: p.show_commitment_cta == null ? true : !!p.show_commitment_cta,
         children: children.map((c) => ({
           slug: c.slug, title: c.title, description: c.description, eyebrow: c.eyebrow,
           cardImage: c.card_image, rating: c.rating != null ? Number(c.rating) : null, reviews: c.reviews,

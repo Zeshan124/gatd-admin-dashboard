@@ -21,6 +21,12 @@ CREATE TABLE IF NOT EXISTS parent_solutions (
   middle_badge  VARCHAR(255) NULL,                 -- middle section: pill/eyebrow
   middle_heading VARCHAR(255) NULL,                -- middle section: heading
   middle_body   TEXT         NULL,                 -- middle section: body paragraphs
+  commitment_banner_eyebrow VARCHAR(160) NULL,
+  commitment_banner_heading VARCHAR(500) NULL,
+  commitment_cta_text VARCHAR(100) NULL,
+  commitment_cta_url VARCHAR(500) NULL,
+  show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,
+  show_commitment_cta TINYINT(1) NOT NULL DEFAULT 1,
   is_clickable  TINYINT(1)   NOT NULL DEFAULT 1,   -- does the header menu category link to its page?
   is_active     TINYINT(1)   NOT NULL DEFAULT 1,
   sort_order    INT          NOT NULL DEFAULT 0,
@@ -60,6 +66,12 @@ CREATE TABLE IF NOT EXISTS child_solutions (
   audience            JSON         NULL,
   brochure            VARCHAR(500) NULL,
   video_url           VARCHAR(500) NULL,                 -- gated program video (YouTube/Vimeo/MP4 URL)
+  commitment_banner_eyebrow VARCHAR(160) NULL,
+  commitment_banner_heading VARCHAR(500) NULL,
+  commitment_cta_text VARCHAR(100) NULL,
+  commitment_cta_url VARCHAR(500) NULL,
+  show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,
+  show_commitment_cta TINYINT(1) NOT NULL DEFAULT 1,
   is_clickable        TINYINT(1)   NOT NULL DEFAULT 1,   -- does the /solutions card link out?
   link_url            VARCHAR(500) NULL,                 -- custom link; empty → /solutions/<slug>
   rating              DECIMAL(2,1) NULL,
@@ -104,8 +116,19 @@ CREATE TABLE IF NOT EXISTS solution_programs (
   pricing_heading      VARCHAR(120) NULL,
   pricing_description  TEXT         NULL,
   pricing_note         VARCHAR(255) NULL,                 -- alt text shown when price isn't finalised
+  programme_dates      VARCHAR(120) NULL,                 -- "Programme Details" Dates card (e.g. "23–27 November 2026")
+  location             VARCHAR(160) NULL,                 -- "Programme Details" Location card
   brochure             VARCHAR(500) NULL,
   video_url            VARCHAR(500) NULL,                 -- gated program video (YouTube/Vimeo/MP4 URL)
+  brochure_button_text VARCHAR(100) NULL,                 -- hero "Download Brochure" button label
+  register_button_text VARCHAR(100) NULL,                 -- hero "Register Now" button label
+  video_button_text    VARCHAR(100) NULL,                 -- hero "Watch Programme Video" button label
+  commitment_cta_text  VARCHAR(100) NULL,                 -- bottom commitment banner button label
+  commitment_cta_url   VARCHAR(500) NULL,                 -- bottom commitment banner button URL
+  commitment_banner_eyebrow VARCHAR(160) NULL,            -- bottom commitment banner eyebrow
+  commitment_banner_heading VARCHAR(500) NULL,            -- bottom commitment banner heading
+  show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,   -- show the bottom commitment banner section?
+  show_commitment_cta  TINYINT(1)   NOT NULL DEFAULT 1,   -- show bottom commitment banner button?
   is_clickable         TINYINT(1)   NOT NULL DEFAULT 1,   -- does the programme card link out?
   link_url             VARCHAR(500) NULL,                 -- custom link; empty → /solutions/<child>/<slug>
   registration_heading VARCHAR(255) NULL,

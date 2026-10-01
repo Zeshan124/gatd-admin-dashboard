@@ -174,13 +174,14 @@ export default function ProgramDetail() {
       {program.showAccreditedBy !== false && (
         <AccreditedBy heading={program.accreditedHeading} logos={program.accreditedLogos} />
       )}
-      {(program.pricingHeading || priceStr || program.pricingNote) && (
+      {(priceStr || program.pricingNote || program.programmeDates || program.location || program.pricingDescription) && (
         <ProgramPricing
-          heading={program.pricingHeading}
+          description={program.pricingDescription}
+          dates={program.programmeDates}
+          location={program.location}
           currency={program.currency}
           price={priceStr}
           period={program.pricingPeriod}
-          description={program.pricingDescription}
           note={program.pricingNote}
         />
       )}
@@ -198,7 +199,15 @@ export default function ProgramDetail() {
           programTitle={program.childSolutionTitle}
         />
       )}
-      <CommitmentBanner />
+      {program.showCommitmentBanner !== false && (
+        <CommitmentBanner
+          showCta={program.showCommitmentCta !== false}
+          ctaText={program.commitmentCtaText}
+          ctaUrl={program.commitmentCtaUrl}
+          eyebrow={program.commitmentBannerEyebrow}
+          heading={program.commitmentBannerHeading}
+        />
+      )}
     </main>
   );
 }

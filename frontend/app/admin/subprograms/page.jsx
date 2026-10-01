@@ -578,6 +578,13 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [cardImage, setCardImage] = useState(editing?.cardImage || null);
   const [brochure, setBrochure] = useState(editing?.brochure || null);
   const [videoUrl, setVideoUrl] = useState(editing?.videoUrl || "");
+  const [brochureButtonText, setBrochureButtonText] = useState(editing?.brochureButtonText || "");
+  const [registerButtonText, setRegisterButtonText] = useState(editing?.registerButtonText || "");
+  const [videoButtonText, setVideoButtonText] = useState(editing?.videoButtonText || "");
+  const [commitmentCtaText, setCommitmentCtaText] = useState(editing?.commitmentCtaText || "");
+  const [commitmentCtaUrl, setCommitmentCtaUrl] = useState(editing?.commitmentCtaUrl || "");
+  const [commitmentBannerEyebrow, setCommitmentBannerEyebrow] = useState(editing?.commitmentBannerEyebrow || "");
+  const [commitmentBannerHeading, setCommitmentBannerHeading] = useState(editing?.commitmentBannerHeading || "");
 
   // pricing (price shown in major units, stored as cents)
   const [price, setPrice] = useState(editing?.priceCents != null ? String(editing.priceCents / 100) : "");
@@ -586,6 +593,8 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [pricingHeading, setPricingHeading] = useState(editing?.pricingHeading || "");
   const [pricingDescription, setPricingDescription] = useState(editing?.pricingDescription || "");
   const [pricingNote, setPricingNote] = useState(editing?.pricingNote || "");
+  const [programmeDates, setProgrammeDates] = useState(editing?.programmeDates || "");
+  const [location, setLocation] = useState(editing?.location || "");
 
   const [overviewTitle, setOverviewTitle] = useState(editing?.overview?.title || "");
   const [overviewDescription, setOverviewDescription] = useState(editing?.overview?.description || "");
@@ -609,6 +618,8 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
   const [linkUrl, setLinkUrl] = useState(editing?.linkUrl || "");
   const [showAccreditedBy, setShowAccreditedBy] = useState(editing?.showAccreditedBy ?? true);
   const [showRegistration, setShowRegistration] = useState(editing?.showRegistration ?? true);
+  const [showCommitmentBanner, setShowCommitmentBanner] = useState(editing?.showCommitmentBanner ?? true);
+  const [showCommitmentCta, setShowCommitmentCta] = useState(editing?.showCommitmentCta ?? true);
   const [accreditedHeading, setAccreditedHeading] = useState(editing?.accreditedHeading || "");
   const [accreditedLogos, setAccreditedLogos] = useState(
     Array.isArray(editing?.accreditedLogos) ? editing.accreditedLogos : []
@@ -671,11 +682,20 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       cardImage: cardImage || null,
       brochure: brochure || null,
       videoUrl: nn(videoUrl),
+      brochureButtonText: nn(brochureButtonText),
+      registerButtonText: nn(registerButtonText),
+      videoButtonText: nn(videoButtonText),
+      commitmentCtaText: nn(commitmentCtaText),
+      commitmentCtaUrl: nn(commitmentCtaUrl),
+      commitmentBannerEyebrow: nn(commitmentBannerEyebrow),
+      commitmentBannerHeading: nn(commitmentBannerHeading),
       currency: (currency || "SGD").toUpperCase(),
       pricingPeriod: nn(pricingPeriod),
       pricingHeading: nn(pricingHeading),
       pricingDescription: nn(pricingDescription),
       pricingNote: nn(pricingNote),
+      programmeDates: nn(programmeDates),
+      location: nn(location),
       gainsHeading: nn(gainsHeading),
       focusHeading: nn(focusHeading),
       focusImage: nn(focusImage),
@@ -703,6 +723,8 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
       ratingEnabled,
       showAccreditedBy,
       showRegistration,
+      showCommitmentBanner,
+      showCommitmentCta,
       accreditedHeading: nn(accreditedHeading),
       accreditedLogos: (accreditedLogos || [])
         .map((l) => ({ name: (l.name || "").trim(), logo: (l.logo || "").trim() }))
@@ -832,6 +854,17 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
         </div>
       </Section>
 
+      <Section title="Commitment banner" description="Show or hide this section on the public programme page and configure its optional button.">
+        <Toggle label="Show section" value={showCommitmentBanner} onChange={setShowCommitmentBanner} onText="Shown" offText="Hidden" />
+        <Toggle label="Show button" value={showCommitmentCta} onChange={setShowCommitmentCta} onText="Shown" offText="Hidden" />
+        <TextField label="Eyebrow" value={commitmentBannerEyebrow} onChange={setCommitmentBannerEyebrow} placeholder="Global association for training and development" hint="Blank uses the default text." />
+        <TextArea label="Heading" value={commitmentBannerHeading} onChange={setCommitmentBannerHeading} rows={3} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TextField label="Button text" value={commitmentCtaText} onChange={setCommitmentCtaText} placeholder="Get In Touch" hint="Blank uses the default label." />
+          <TextField label="Button link" value={commitmentCtaUrl} onChange={setCommitmentCtaUrl} placeholder="/contact" hint="Use a site path or an https:// URL. Blank links to Contact." />
+        </div>
+      </Section>
+
       <Section title="Accredited By logos" description="Logos for THIS program's “Accredited By” section. Leave both empty to use the global default (Admin → Accredited By). Editing these only affects this program.">
         <TextField
           label="Heading (optional)"
@@ -883,9 +916,18 @@ function SubprogramFormDrawer({ editing, programs, onClose, onSaved }) {
           placeholder="https://www.youtube.com/watch?v=…  or  /video/clip.mp4"
           hint="Gated on the public Program page — visitors submit the lead form to watch. Leave blank to hide the video."
         />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <TextField label="Brochure button text" value={brochureButtonText} onChange={setBrochureButtonText} placeholder="Download Brochure" hint="Hero CTA label. Blank = default." />
+          <TextField label="Register button text" value={registerButtonText} onChange={setRegisterButtonText} placeholder="Register Now" hint="Hero CTA label. Blank = default." />
+          <TextField label="Video button text" value={videoButtonText} onChange={setVideoButtonText} placeholder="Watch Programme Video" hint="Shown only when a video URL is set." />
+        </div>
       </Section>
 
-      <Section title="Pricing">
+      <Section title="Programme details & pricing" description="Drives the public “Programme Details” section — Dates & Location cards below, the Investment card from Price + period, and the description from “Pricing description”.">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TextField label="Programme dates" value={programmeDates} onChange={setProgrammeDates} placeholder="e.g. 23–27 November 2026" hint="“Dates” card. Blank = card hidden." />
+          <TextField label="Location" value={location} onChange={setLocation} placeholder="e.g. Kuala Lumpur, Malaysia" hint="“Location” card. Blank = card hidden." />
+        </div>
         <div className="grid grid-cols-3 gap-4">
           <NumberField label="Price" min={0} step="0.01" value={price} onChange={setPrice} error={fe.priceCents} hint="In currency units, e.g. 3850" />
           <label className="block">

@@ -11,6 +11,10 @@ const DEFAULTS = {
   description: "Enter your details and we will share the GATD company profile with you.",
   button_label: "Company Profile",
   pdf_url: "/brochures/GATD-Company-Profile.pdf",
+  home_commitment_banner_eyebrow: "Global association for training and development",
+  home_commitment_banner_heading: "We are Committed to Empowering Individuals and Organizations to Achieve Sustainable Growth.",
+  home_show_commitment_banner: 1,
+  home_show_commitment_cta: 0,
 };
 
 function mapRow(r) {
@@ -21,6 +25,12 @@ function mapRow(r) {
     description: r.description,
     buttonLabel: r.button_label,
     pdfUrl: r.pdf_url,
+    homeCommitmentBannerEyebrow: r.home_commitment_banner_eyebrow,
+    homeCommitmentBannerHeading: r.home_commitment_banner_heading,
+    homeCommitmentCtaText: r.home_commitment_cta_text,
+    homeCommitmentCtaUrl: r.home_commitment_cta_url,
+    homeShowCommitmentBanner: r.home_show_commitment_banner == null ? true : !!r.home_show_commitment_banner,
+    homeShowCommitmentCta: r.home_show_commitment_cta == null ? false : !!r.home_show_commitment_cta,
     updatedAt: r.updated_at,
   };
 }
@@ -30,9 +40,11 @@ async function ensureRow() {
   const rows = await query(`SELECT * FROM company_profile WHERE id = 1 LIMIT 1`);
   if (rows[0]) return rows[0];
   await query(
-    `INSERT INTO company_profile (id, is_enabled, eyebrow, heading, description, button_label, pdf_url)
-     VALUES (1, ?, ?, ?, ?, ?, ?)`,
-    [DEFAULTS.is_enabled, DEFAULTS.eyebrow, DEFAULTS.heading, DEFAULTS.description, DEFAULTS.button_label, DEFAULTS.pdf_url]
+    `INSERT INTO company_profile (id, is_enabled, eyebrow, heading, description, button_label, pdf_url,
+       home_commitment_banner_eyebrow, home_commitment_banner_heading, home_show_commitment_banner, home_show_commitment_cta)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [DEFAULTS.is_enabled, DEFAULTS.eyebrow, DEFAULTS.heading, DEFAULTS.description, DEFAULTS.button_label, DEFAULTS.pdf_url,
+      DEFAULTS.home_commitment_banner_eyebrow, DEFAULTS.home_commitment_banner_heading, DEFAULTS.home_show_commitment_banner, DEFAULTS.home_show_commitment_cta]
   );
   const created = await query(`SELECT * FROM company_profile WHERE id = 1 LIMIT 1`);
   return created[0];
@@ -67,6 +79,8 @@ async function update(req, res) {
     const fields = {};
 
     if (b.isEnabled !== undefined) cols.is_enabled = b.isEnabled ? 1 : 0;
+    if (b.homeShowCommitmentBanner !== undefined) cols.home_show_commitment_banner = b.homeShowCommitmentBanner ? 1 : 0;
+    if (b.homeShowCommitmentCta !== undefined) cols.home_show_commitment_cta = b.homeShowCommitmentCta ? 1 : 0;
 
     for (const [col, key, max] of [
       ["eyebrow", "eyebrow", 120],
@@ -80,6 +94,24 @@ async function update(req, res) {
     }
 
     if (b.description !== undefined) cols.description = b.description == null ? null : String(b.description);
+
+    for (const [col, key, max] of [
+      ["home_commitment_banner_eyebrow", "homeCommitmentBannerEyebrow", 160],
+      ["home_commitment_banner_heading", "homeCommitmentBannerHeading", 500],
+      ["home_commitment_cta_text", "homeCommitmentCtaText", 100],
+    ]) {
+      if (b[key] === undefined) continue;
+      const value = b[key] == null ? "" : String(b[key]).trim();
+      if (value.length > max) fields[key] = `Must be ≤ ${max} characters`;
+      else cols[col] = value || null;
+    }
+
+    if (b.homeCommitmentCtaUrl !== undefined) {
+      const value = b.homeCommitmentCtaUrl == null ? "" : String(b.homeCommitmentCtaUrl).trim();
+      if (!value) cols.home_commitment_cta_url = null;
+      else if (value.length > 500 || !SAFE_LINK_RE.test(value)) fields.homeCommitmentCtaUrl = "Button URL must be a relative path (/…) or an http(s):// URL (≤500 characters)";
+      else cols.home_commitment_cta_url = value;
+    }
 
     if (b.pdfUrl !== undefined) {
       const v = b.pdfUrl == null ? "" : String(b.pdfUrl).trim();

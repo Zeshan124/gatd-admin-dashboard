@@ -14,7 +14,7 @@ const solutions = [
       "Global ATD's Executive Education Programs are crafted to equip senior leaders and high-potential executives with the strategic insight and leadership capabilities needed to navigate today's fast-changing business environment. Grounded in real-world application and future-forward thinking, our programs support leaders in translating learning into measurable organizational impact.",
     image:
       "/images/solutions/executive-educational/executive-education-program.jpg",
-    href: "/solutions/executive-educational",
+    href: "/solutions/executive-educational-program",
   },
   {
     id: "consulting-service",
@@ -64,7 +64,7 @@ const solutions = [
     description:
       "The GATD Incubator cultivates innovation, leadership, and entrepreneurial growth across regions and industries. It offers mentorship, training, and strategic guidance to emerging leaders, startups, and organizations aiming for scalable, sustainable success.",
     image: "/images/solutions/Incubators/6.jpg",
-    href: "/solutions/incubators",
+    href: "/solutions/incubators-regional-international",
   },
   {
     id: "event-management",
@@ -101,13 +101,6 @@ const solutions = [
 export default function OurSolutions() {
   const [activeId, setActiveId] = useState(solutions[0].id);
   const active = solutions.find((s) => s.id === activeId);
-
-  // Deep-link "Explore More" to this solution's own section on the /solutions page
-  // (pre-filtered + scrolled there), rather than the general Solutions page. Keyed
-  // by the distinct tab `id` — the hardcoded `href` values are unreliable (several
-  // tabs share the same href), whereas `id` is unique per tab and the catalog
-  // matches it against the real CMS category slug/title.
-  const exploreHref = `/solutions?category=${encodeURIComponent(active.id)}`;
 
   return (
     <section className="bg-white py-12 sm:py-16 md:py-20">
@@ -174,7 +167,7 @@ export default function OurSolutions() {
               {active.description}
             </p>
             <Link
-              href={exploreHref}
+              href={active.href}
               className="inline-flex items-center justify-center self-start px-6 py-3 bg-[#D52029] hover:bg-red-700 text-white text-sm font-bold rounded-md transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
               Explore More

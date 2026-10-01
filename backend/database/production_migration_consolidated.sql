@@ -14,6 +14,8 @@
 --   * solution_programs focus_image (per-program "Certification Focuses on Developing" image)
 --   * solution_programs hero_logos (per-program hero logos, between title & rating)
 --   * parent_solutions eyebrow/banner/middle_* (individual Solution pages)
+--   * solution_programs brochure/register/video_button_text (editable hero CTA labels)
+--   * solution_programs programme_dates/location ("Programme Details" section)
 --   * company_profile   table              (header Company Profile popup)
 --   * newsletter_subscribers table         (footer newsletter form)
 --   * accreditation_settings table         (Program pages "Accredited By" heading + logos)
@@ -35,6 +37,12 @@ ALTER TABLE parent_solutions
   ADD COLUMN IF NOT EXISTS middle_badge   VARCHAR(255) NULL,
   ADD COLUMN IF NOT EXISTS middle_heading VARCHAR(255) NULL,
   ADD COLUMN IF NOT EXISTS middle_body    TEXT         NULL,
+  ADD COLUMN IF NOT EXISTS commitment_banner_eyebrow VARCHAR(160) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_banner_heading VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_cta_text VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_cta_url VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS show_commitment_cta TINYINT(1) NOT NULL DEFAULT 1,
   ADD COLUMN IF NOT EXISTS is_clickable   TINYINT(1)   NOT NULL DEFAULT 1;
 
 -- Programs (child_solutions) --------------------------------------------------
@@ -42,7 +50,13 @@ ALTER TABLE child_solutions
   ADD COLUMN IF NOT EXISTS is_clickable   TINYINT(1)   NOT NULL DEFAULT 1,
   ADD COLUMN IF NOT EXISTS link_url       VARCHAR(500) NULL,
   ADD COLUMN IF NOT EXISTS rating_enabled TINYINT(1)   NOT NULL DEFAULT 1,
-  ADD COLUMN IF NOT EXISTS video_url      VARCHAR(500) NULL;
+  ADD COLUMN IF NOT EXISTS video_url      VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_banner_eyebrow VARCHAR(160) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_banner_heading VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_cta_text VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_cta_url VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS show_commitment_cta TINYINT(1) NOT NULL DEFAULT 1;
 
 -- Subprograms (solution_programs) ---------------------------------------------
 ALTER TABLE solution_programs
@@ -56,7 +70,18 @@ ALTER TABLE solution_programs
   ADD COLUMN IF NOT EXISTS accredited_heading VARCHAR(255) NULL,
   ADD COLUMN IF NOT EXISTS accredited_logos   JSON         NULL,
   ADD COLUMN IF NOT EXISTS focus_image        VARCHAR(500) NULL,
-  ADD COLUMN IF NOT EXISTS hero_logos         JSON         NULL;
+  ADD COLUMN IF NOT EXISTS hero_logos         JSON         NULL,
+  ADD COLUMN IF NOT EXISTS brochure_button_text VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS register_button_text VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS video_button_text    VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_cta_text  VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_cta_url   VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_banner_eyebrow VARCHAR(160) NULL,
+  ADD COLUMN IF NOT EXISTS commitment_banner_heading VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS show_commitment_cta  TINYINT(1) NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS programme_dates      VARCHAR(120) NULL,
+  ADD COLUMN IF NOT EXISTS location             VARCHAR(160) NULL;
 
 -- Company Profile (header popup) — singleton settings row ---------------------
 CREATE TABLE IF NOT EXISTS company_profile (
@@ -67,9 +92,23 @@ CREATE TABLE IF NOT EXISTS company_profile (
   description  TEXT         NULL,
   button_label VARCHAR(80)  NULL,
   pdf_url      VARCHAR(500) NULL,
+  home_commitment_banner_eyebrow VARCHAR(160) NULL,
+  home_commitment_banner_heading VARCHAR(500) NULL,
+  home_commitment_cta_text VARCHAR(100) NULL,
+  home_commitment_cta_url VARCHAR(500) NULL,
+  home_show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,
+  home_show_commitment_cta TINYINT(1) NOT NULL DEFAULT 0,
   updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE company_profile
+  ADD COLUMN IF NOT EXISTS home_commitment_banner_eyebrow VARCHAR(160) NULL,
+  ADD COLUMN IF NOT EXISTS home_commitment_banner_heading VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS home_commitment_cta_text VARCHAR(100) NULL,
+  ADD COLUMN IF NOT EXISTS home_commitment_cta_url VARCHAR(500) NULL,
+  ADD COLUMN IF NOT EXISTS home_show_commitment_banner TINYINT(1) NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS home_show_commitment_cta TINYINT(1) NOT NULL DEFAULT 0;
 
 INSERT INTO company_profile (id, is_enabled, eyebrow, heading, description, button_label, pdf_url)
 VALUES (1, 1, 'Company Profile', 'Download Our Company Profile',

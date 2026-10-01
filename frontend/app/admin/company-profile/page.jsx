@@ -18,6 +18,12 @@ const EMPTY = {
   description: "",
   buttonLabel: "",
   pdfUrl: "",
+  homeCommitmentBannerEyebrow: "",
+  homeCommitmentBannerHeading: "",
+  homeCommitmentCtaText: "",
+  homeCommitmentCtaUrl: "",
+  homeShowCommitmentBanner: true,
+  homeShowCommitmentCta: false,
 };
 
 export default function CompanyProfilePage() {
@@ -43,6 +49,12 @@ export default function CompanyProfilePage() {
         description: d.description || "",
         buttonLabel: d.buttonLabel || "",
         pdfUrl: d.pdfUrl || "",
+        homeCommitmentBannerEyebrow: d.homeCommitmentBannerEyebrow || "",
+        homeCommitmentBannerHeading: d.homeCommitmentBannerHeading || "",
+        homeCommitmentCtaText: d.homeCommitmentCtaText || "",
+        homeCommitmentCtaUrl: d.homeCommitmentCtaUrl || "",
+        homeShowCommitmentBanner: d.homeShowCommitmentBanner !== false,
+        homeShowCommitmentCta: d.homeShowCommitmentCta === true,
       });
     } catch (err) {
       setLoadErr(err.message || "Could not load company profile settings.");
@@ -67,6 +79,12 @@ export default function CompanyProfilePage() {
         description: form.description,
         buttonLabel: form.buttonLabel,
         pdfUrl: form.pdfUrl,
+        homeCommitmentBannerEyebrow: form.homeCommitmentBannerEyebrow,
+        homeCommitmentBannerHeading: form.homeCommitmentBannerHeading,
+        homeCommitmentCtaText: form.homeCommitmentCtaText,
+        homeCommitmentCtaUrl: form.homeCommitmentCtaUrl,
+        homeShowCommitmentBanner: form.homeShowCommitmentBanner,
+        homeShowCommitmentCta: form.homeShowCommitmentCta,
       });
       const d = res?.data || {};
       setForm({
@@ -76,6 +94,12 @@ export default function CompanyProfilePage() {
         description: d.description || "",
         buttonLabel: d.buttonLabel || "",
         pdfUrl: d.pdfUrl || "",
+        homeCommitmentBannerEyebrow: d.homeCommitmentBannerEyebrow || "",
+        homeCommitmentBannerHeading: d.homeCommitmentBannerHeading || "",
+        homeCommitmentCtaText: d.homeCommitmentCtaText || "",
+        homeCommitmentCtaUrl: d.homeCommitmentCtaUrl || "",
+        homeShowCommitmentBanner: d.homeShowCommitmentBanner !== false,
+        homeShowCommitmentCta: d.homeShowCommitmentCta === true,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -189,6 +213,20 @@ export default function CompanyProfilePage() {
             onChange={set("pdfUrl")}
             hint="Upload a PDF or paste a path/URL. Defaults to /brochures/GATD-Company-Profile.pdf."
           />
+        </Section>
+
+        <Section
+          title="Homepage Commitment Banner"
+          description="These settings affect only the banner on the home page. Program page banners remain independently managed in their own editors."
+        >
+          <Toggle label="Show banner" value={form.homeShowCommitmentBanner} onChange={set("homeShowCommitmentBanner")} onText="Shown" offText="Hidden" />
+          <Toggle label="Show button" value={form.homeShowCommitmentCta} onChange={set("homeShowCommitmentCta")} onText="Shown" offText="Hidden" />
+          <TextField label="Eyebrow" value={form.homeCommitmentBannerEyebrow} onChange={set("homeCommitmentBannerEyebrow")} placeholder="Global association for training and development" />
+          <TextArea label="Heading" value={form.homeCommitmentBannerHeading} onChange={set("homeCommitmentBannerHeading")} rows={3} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <TextField label="Button text" value={form.homeCommitmentCtaText} onChange={set("homeCommitmentCtaText")} placeholder="Get In Touch" />
+            <TextField label="Button link" value={form.homeCommitmentCtaUrl} onChange={set("homeCommitmentCtaUrl")} placeholder="/contact" hint="Use a site path or https:// URL." />
+          </div>
         </Section>
 
         {saveErr && (

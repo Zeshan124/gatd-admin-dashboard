@@ -19,7 +19,15 @@ export default function ProgramsHero({ program }) {
     reviews,
     ratingEnabled,
     heroLogos,
+    brochureButtonText,
+    registerButtonText,
+    videoButtonText,
   } = program;
+
+  // Admin-editable CTA labels (Admin → Subprograms); fall back to defaults when blank.
+  const brochureLabel = brochureButtonText?.trim() || "Download Brochure";
+  const registerLabel = registerButtonText?.trim() || "Register Now";
+  const videoLabel = videoButtonText?.trim() || "Watch Programme Video";
 
   const logos = Array.isArray(heroLogos) ? heroLogos.filter((l) => l && l.logo) : [];
 
@@ -107,13 +115,13 @@ export default function ProgramsHero({ program }) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m0 0l-4-4m4 4l4-4" />
                   </svg>
                 </span>
-                Download Programme Brochure
+                {brochureLabel}
               </button>
               <a
                 href="#registration"
                 className="inline-flex items-center gap-2 px-6 py-3 border-2 border-[#414143] text-[#414143] hover:bg-[#414143] hover:text-white text-sm font-bold rounded-lg transition-all duration-200"
               >
-                Schedule a Consultation
+                {registerLabel}
               </a>
 
               {/* Gated programme video — opens the lead form, then plays the video */}
@@ -130,7 +138,7 @@ export default function ProgramsHero({ program }) {
                     </svg>
                   </span>
                   <span className="text-sm font-bold text-[#414143] group-hover:text-[#D52029] transition-colors">
-                    Watch Programme Video
+                    {videoLabel}
                   </span>
                 </button>
               )}

@@ -17,6 +17,11 @@ const STRING_FIELDS = [
   ["subtext", "subtext"], ["pricing_period", "pricingPeriod"], ["pricing_heading", "pricingHeading"],
   ["pricing_description", "pricingDescription"], ["pricing_note", "pricingNote"], ["brochure", "brochure"], ["registration_heading", "registrationHeading"],
   ["gains_heading", "gainsHeading"], ["focus_heading", "focusHeading"], ["focus_image", "focusImage"],
+  ["brochure_button_text", "brochureButtonText"], ["register_button_text", "registerButtonText"],
+  ["video_button_text", "videoButtonText"],
+  ["commitment_cta_text", "commitmentCtaText"], ["commitment_cta_url", "commitmentCtaUrl"],
+  ["commitment_banner_eyebrow", "commitmentBannerEyebrow"], ["commitment_banner_heading", "commitmentBannerHeading"],
+  ["programme_dates", "programmeDates"], ["location", "location"],
 ];
 
 // A link target is safe only if it's a same-site relative path (/…, not //) or an
@@ -47,8 +52,19 @@ function mapProgram(r) {
     pricingHeading: r.pricing_heading,
     pricingDescription: r.pricing_description,
     pricingNote: r.pricing_note,
+    programmeDates: r.programme_dates,
+    location: r.location,
     brochure: r.brochure,
     videoUrl: r.video_url,
+    brochureButtonText: r.brochure_button_text,
+    registerButtonText: r.register_button_text,
+    videoButtonText: r.video_button_text,
+    commitmentCtaText: r.commitment_cta_text,
+    commitmentCtaUrl: r.commitment_cta_url,
+    commitmentBannerEyebrow: r.commitment_banner_eyebrow,
+    commitmentBannerHeading: r.commitment_banner_heading,
+    showCommitmentBanner: r.show_commitment_banner == null ? true : !!r.show_commitment_banner,
+    showCommitmentCta: r.show_commitment_cta == null ? true : !!r.show_commitment_cta,
     isClickable: !!r.is_clickable,
     linkUrl: r.link_url,
     registrationHeading: r.registration_heading,
@@ -212,6 +228,13 @@ function collectColumns(body, { partial }) {
   if (body.ratingEnabled !== undefined) cols.rating_enabled = body.ratingEnabled ? 1 : 0;
   if (body.showAccreditedBy !== undefined) cols.show_accredited_by = body.showAccreditedBy ? 1 : 0;
   if (body.showRegistration !== undefined) cols.show_registration = body.showRegistration ? 1 : 0;
+  if (body.showCommitmentBanner !== undefined) cols.show_commitment_banner = body.showCommitmentBanner ? 1 : 0;
+  if (body.showCommitmentCta !== undefined) cols.show_commitment_cta = body.showCommitmentCta ? 1 : 0;
+  if (body.commitmentCtaText !== undefined) {
+    const text = body.commitmentCtaText == null ? "" : String(body.commitmentCtaText).trim();
+    if (text.length > 100) fields.commitmentCtaText = "Must be ≤ 100 characters";
+    else cols.commitment_cta_text = text || null;
+  }
   if (body.accreditedHeading !== undefined) {
     const v = body.accreditedHeading == null ? "" : String(body.accreditedHeading).trim();
     if (v.length > 255) fields.accreditedHeading = "Must be ≤ 255 characters";
@@ -247,6 +270,13 @@ function collectColumns(body, { partial }) {
     if (!u) cols.link_url = null;
     else if (!SAFE_LINK_RE.test(u)) fields.linkUrl = "Link URL must be a relative path (/…) or an http(s):// URL";
     else cols.link_url = u;
+  }
+  if (body.commitmentCtaUrl !== undefined) {
+    const u = body.commitmentCtaUrl == null ? "" : String(body.commitmentCtaUrl).trim();
+    if (!u) cols.commitment_cta_url = null;
+    else if (u.length > 500) fields.commitmentCtaUrl = "Must be ≤ 500 characters";
+    else if (!SAFE_LINK_RE.test(u)) fields.commitmentCtaUrl = "Link must be a relative path (/…) or an http(s):// URL";
+    else cols.commitment_cta_url = u;
   }
   if (body.videoUrl !== undefined) {
     const u = body.videoUrl == null ? "" : String(body.videoUrl).trim();

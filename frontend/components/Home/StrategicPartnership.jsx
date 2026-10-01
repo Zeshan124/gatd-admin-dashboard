@@ -6,12 +6,12 @@ import { Fragment } from "react";
 const PARTNERS = [
   { name: "Nexen Strategy", logo: "/images/home/nexen-logo-white-1-8capSp.png", card: false },
   { name: "GATD", logo: "/images/home/gatd.png", card: false },
-  { name: "Roya Ventures", logo: "/images/home/roya-logo-CbrsReqI.png", card: true },
+  { name: "Roya Ventures", logo: "/images/home/Roya-Venture.png", card: true },
 ];
 
 export default function StrategicPartnership() {
   return (
-    <section className="relative overflow-hidden bg-linear-to-b from-[#1b1c22] to-[#4b4e5b] py-16 sm:py-20 md:py-24">
+    <section className="relative overflow-hidden bg-linear-to-b from-[#414143] to-[#414143] py-16 sm:py-20 md:py-24">
       <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-16 xl:px-24 text-center">
         {/* Eyebrow */}
         <div className="flex items-center justify-center gap-3 mb-4">
@@ -44,7 +44,7 @@ export default function StrategicPartnership() {
                 </span>
               )}
               {p.card ? (
-                <div className="bg-white rounded-xl px-5 py-3 flex items-center justify-center shadow-lg">
+                <div className="rounded-xl px-5 py-3 flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.logo} alt={p.name} className="h-9 sm:h-11 w-auto object-contain" />
                 </div>

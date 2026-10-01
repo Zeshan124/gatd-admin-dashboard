@@ -13,6 +13,9 @@ const STRING_FIELDS = [
   ["map_image", "mapImage"], ["gains_heading", "gainsHeading"], ["why_heading", "whyHeading"],
   ["why_badge", "whyBadge"], ["why_image", "whyImage"], ["audience_badge", "audienceBadge"],
   ["audience_heading", "audienceHeading"], ["audience_image", "audienceImage"], ["brochure", "brochure"],
+  ["commitment_banner_eyebrow", "commitmentBannerEyebrow"],
+  ["commitment_banner_heading", "commitmentBannerHeading"],
+  ["commitment_cta_text", "commitmentCtaText"],
 ];
 
 // A link target is safe only if it's a same-site relative path (/…, not //) or an
@@ -47,6 +50,12 @@ function mapChild(r) {
     audienceImage: r.audience_image,
     audience: parseJson(r.audience),
     brochure: r.brochure,
+    commitmentBannerEyebrow: r.commitment_banner_eyebrow,
+    commitmentBannerHeading: r.commitment_banner_heading,
+    commitmentCtaText: r.commitment_cta_text,
+    commitmentCtaUrl: r.commitment_cta_url,
+    showCommitmentBanner: r.show_commitment_banner == null ? true : !!r.show_commitment_banner,
+    showCommitmentCta: r.show_commitment_cta == null ? true : !!r.show_commitment_cta,
     videoUrl: r.video_url,
     isClickable: !!r.is_clickable,
     linkUrl: r.link_url,
@@ -104,6 +113,14 @@ function collectColumns(body, { partial }) {
   for (const [col, key] of STRING_FIELDS) {
     if (body[key] !== undefined) cols[col] = body[key] == null ? null : String(body[key]);
   }
+  if (body.commitmentCtaUrl !== undefined) {
+    const url = body.commitmentCtaUrl == null ? "" : String(body.commitmentCtaUrl).trim();
+    if (!url) cols.commitment_cta_url = null;
+    else if (url.length > 500 || !SAFE_LINK_RE.test(url)) fields.commitmentCtaUrl = "CTA URL must be a relative path (/…) or an http(s):// URL (≤500 characters)";
+    else cols.commitment_cta_url = url;
+  }
+  if (body.showCommitmentBanner !== undefined) cols.show_commitment_banner = body.showCommitmentBanner ? 1 : 0;
+  if (body.showCommitmentCta !== undefined) cols.show_commitment_cta = body.showCommitmentCta ? 1 : 0;
   if (body.gains !== undefined) {
     const err = validateGains(body.gains);
     if (err) fields.gains = err;
