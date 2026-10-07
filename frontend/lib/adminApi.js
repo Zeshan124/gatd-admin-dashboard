@@ -313,6 +313,14 @@ export const companyProfileApi = {
   update: (body) => request("/admin/company-profile", { method: "PATCH", body }),
 };
 
+// ── Website popup (shown on site open) ───────────────────────────────────────
+export const sitePopupApi = {
+  /** { data: {...settings} } */
+  get: () => request("/admin/site-popup"),
+  /** Update settings → { data: {...} } */
+  update: (body) => request("/admin/site-popup", { method: "PATCH", body }),
+};
+
 // ── "Accredited By" settings (Program pages) ─────────────────────────────────
 export const accreditationApi = {
   /** { data: { heading, logos:[{name,logo}] } } */

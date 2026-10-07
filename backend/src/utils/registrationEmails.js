@@ -21,6 +21,30 @@ function esc(s) {
     .replace(/'/g, "&#39;");
 }
 
+// Legal footer (company details + confidentiality disclaimer) appended to every
+// registration email.
+const DISCLAIMER =
+  "This email and any attachments may contain confidential information and are intended solely for the designated recipient. " +
+  "If you have received this communication in error, please notify the sender promptly and delete it from your system. " +
+  "Any unauthorised disclosure, copying, distribution, or use of its contents is prohibited. " +
+  "Views expressed are those of the sender and do not necessarily represent the official position of the GATD. " +
+  "This communication is not contractually binding unless expressly stated and issued by an authorised GATD representative. " +
+  "While reasonable precautions have been taken to protect this email and its attachments from viruses or malicious content, " +
+  "recipients are advised to perform their own security checks before opening any attachments.";
+
+const FOOTER_TEXT =
+  `\n\n--\n` +
+  `Global Association for Training & Development (GATD) | UEN No.: 202400505K\n` +
+  `Registered Office Address: 100 Jalan Sultan, #09-06, Sultan Plaza, Singapore 199001.\n\n` +
+  DISCLAIMER;
+
+const FOOTER_HTML =
+  `<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:12px;line-height:1.6;color:#6b6b6d">` +
+  `<p style="margin:0 0 4px">Global Association for Training &amp; Development (GATD) | <strong>UEN No.:</strong> 202400505K</p>` +
+  `<p style="margin:0 0 12px"><strong>Registered Office Address:</strong> 100 Jalan Sultan, #09-06, Sultan Plaza, Singapore 199001.</p>` +
+  `<p style="margin:0;font-size:11px;color:#8a8a8c">${esc(DISCLAIMER)}</p>` +
+  `</div>`;
+
 /** Render the selected programmes as plain-text and HTML rows. */
 function renderPrograms(programs, currency) {
   const text = programs
@@ -39,7 +63,8 @@ function renderPrograms(programs, currency) {
 }
 
 /**
- * Fire both emails for a newly-created registration.
+ * Build (but don't send) both emails for a registration.
+ * Returns { user: { subject, text, html }, admin: { subject, text, html } }.
  * @param {object} args
  * @param {object} args.value      normalized form values (firstName, email, …)
  * @param {string} args.dialCode   e.g. "+92"
@@ -48,7 +73,7 @@ function renderPrograms(programs, currency) {
  * @param {string} args.currency
  * @param {number} args.totalAmountCents
  */
-async function sendRegistrationEmails({ value, dialCode, referenceNo, programs, currency, totalAmountCents }) {
+function buildRegistrationEmails({ value, dialCode, referenceNo, programs, currency, totalAmountCents }) {
   const fullName = [value.firstName, value.lastName].filter(Boolean).join(" ");
   const totalStr = formatMoney(totalAmountCents, currency);
   const rows = renderPrograms(programs, currency);
@@ -64,7 +89,8 @@ async function sendRegistrationEmails({ value, dialCode, referenceNo, programs, 
     `Programme(s):\n${rows.text}\n\n` +
     `Total: ${totalStr}\n\n` +
     `If you have any questions, simply reply to this email.\n\n` +
-    `Warm regards,\nThe GATD Team`;
+    `Warm regards,\nThe GATD Team` +
+    FOOTER_TEXT;
   const userHtml =
     `<div style="font-family:Arial,Helvetica,sans-serif;color:#414143;font-size:14px;line-height:1.6">` +
     `<p>Dear ${esc(value.firstName)},</p>` +
@@ -79,7 +105,9 @@ async function sendRegistrationEmails({ value, dialCode, referenceNo, programs, 
     `<td style="padding:8px 12px;text-align:right;font-weight:bold">${esc(totalStr)}</td></tr></tfoot>` +
     `</table>` +
     `<p>If you have any questions, simply reply to this email.</p>` +
-    `<p>Warm regards,<br>The GATD Team</p></div>`;
+    `<p>Warm regards,<br>The GATD Team</p>` +
+    FOOTER_HTML +
+    `</div>`;
 
   // 2) Internal notification ---------------------------------------------------
   const adminSubject = `New registration ${referenceNo} — ${fullName || value.email}`;
@@ -95,7 +123,8 @@ async function sendRegistrationEmails({ value, dialCode, referenceNo, programs, 
     `Heard via: ${value.hearAboutUs || "—"}\n` +
     `Source:    ${value.sourcePage || "—"}\n\n` +
     `Programme(s):\n${rows.text}\n\n` +
-    `Total: ${totalStr}`;
+    `Total: ${totalStr}` +
+    FOOTER_TEXT;
   const adminHtml =
     `<div style="font-family:Arial,Helvetica,sans-serif;color:#414143;font-size:14px;line-height:1.6">` +
     `<h2 style="color:#D52029;margin:0 0 12px">New program registration</h2>` +
@@ -116,12 +145,23 @@ async function sendRegistrationEmails({ value, dialCode, referenceNo, programs, 
     `<tbody>${rows.html}</tbody>` +
     `<tfoot><tr><td style="padding:8px 12px;font-weight:bold">Total</td>` +
     `<td style="padding:8px 12px;text-align:right;font-weight:bold">${esc(totalStr)}</td></tr></tfoot>` +
-    `</table></div>`;
+    `</table>` +
+    FOOTER_HTML +
+    `</div>`;
 
+  return {
+    user: { subject: userSubject, text: userText, html: userHtml },
+    admin: { subject: adminSubject, text: adminText, html: adminHtml },
+  };
+}
+
+/** Fire both emails for a newly-created registration (same args as buildRegistrationEmails). */
+async function sendRegistrationEmails(args) {
+  const { user, admin } = buildRegistrationEmails(args);
   await Promise.all([
-    sendMail({ to: value.email, subject: userSubject, text: userText, html: userHtml, replyTo: NOTIFY_TO }),
-    sendMail({ to: NOTIFY_TO, subject: adminSubject, text: adminText, html: adminHtml, replyTo: value.email }),
+    sendMail({ to: args.value.email, ...user, replyTo: NOTIFY_TO }),
+    sendMail({ to: NOTIFY_TO, ...admin, replyTo: args.value.email }),
   ]);
 }
 
-module.exports = { sendRegistrationEmails };
+module.exports = { buildRegistrationEmails, sendRegistrationEmails };

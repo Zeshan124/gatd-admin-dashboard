@@ -11,6 +11,7 @@ const TITLES = {
   "/admin/registrations": "Registrations",
   "/admin/programs": "Programs",
   "/admin/company-profile": "Company Profile",
+  "/admin/site-popup": "Website Popup",
   "/admin/accreditation": "Accredited By",
   "/admin/sitemap": "Sitemap",
   "/admin/newsletter": "Newsletter",

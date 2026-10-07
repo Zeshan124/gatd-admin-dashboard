@@ -67,6 +67,14 @@ export const publicCompanyProfileApi = {
   get: () => pub("/public/company-profile"),
 };
 
+// Website popup shown shortly after the site opens (public read).
+export const publicSitePopupApi = {
+  /** { data: null } when disabled, else { data: { showFrom, showUntil, frequency, delaySeconds,
+   *  eyebrow, titleHighlight, title, description, startDate, endDate, locationCity, locationCountry,
+   *  priceLabel, price, priceUnit, badgeText, buttonText, buttonUrl, image, updatedAt } } */
+  get: () => pub("/public/site-popup"),
+};
+
 // "Accredited By" settings shown on Program pages (public read).
 export const publicAccreditationApi = {
   /** { data: { heading, logos:[{ name, logo }] } } */

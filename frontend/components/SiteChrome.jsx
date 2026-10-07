@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SitePopup from "@/components/SitePopup";
 
 /**
  * Renders the public marketing chrome (Navbar + Footer) on every route
@@ -19,6 +20,7 @@ export default function SiteChrome({ children }) {
       <Navbar />
       {children}
       <Footer />
+      <SitePopup />
     </div>
   );
 }
