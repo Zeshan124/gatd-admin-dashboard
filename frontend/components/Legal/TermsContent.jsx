@@ -369,7 +369,7 @@ export default function TermsContent() {
       eyebrow="Global Association for Training and Development (GATD)"
       title="TERMS & CONDITIONS"
       company="GATD Pte. Ltd."
-      dates={["Effective Date: [05.10.2026]", "Last Updated: [05.10.2026]"]}
+      dates={["Effective Date: 05.10.2026", "Last Updated: 05.10.2026"]}
       banner="/images/legal/terms-and-conditions-banner.jpg"
       tocLabel="Terms & Conditions"
       contact={{ label: "Questions about these Terms", email: "info@globalatd.com" }}

@@ -281,7 +281,7 @@ export default function CancellationRefundContent() {
       eyebrow="Global Association for Training and Development (GATD)"
       title="CANCELLATION & REFUND POLICY"
       company="GATD Pte. Ltd."
-      dates={["Effective Date: [05.10.2026]", "Last Updated: [05.10.2026]"]}
+      dates={["Effective Date: 05.10.2026", "Last Updated: 05.10.2026"]}
       banner="/images/legal/cancellation-and-refund-policy-banner.jpg"
       tocLabel="Cancellation & Refund Policy"
       contact={{ label: "Cancellations & Refunds", email: "info@globalatd.com" }}

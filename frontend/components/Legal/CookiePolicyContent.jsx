@@ -1,6 +1,7 @@
 "use client";
 
 import LegalPage, { Address, Bullets, Mail, SiteLink } from "./LegalPage";
+import { openCookieSettings } from "@/lib/consent";
 
 function SubHeading({ children }) {
   return <h3 className="text-base sm:text-lg font-bold text-[#414143] pt-3">{children}</h3>;
@@ -8,8 +9,18 @@ function SubHeading({ children }) {
 
 // Cookie inventory for section 5 — based on an audit of the site's code
 // (frontend + backend). Update this list whenever a cookie, analytics tag,
-// pixel or third-party embed is added or removed.
+// pixel or third-party embed is added or removed. If a new optional tool is
+// added, also bump CONSENT_VERSION in lib/consent.js so visitors are asked again.
 const cookieInventory = [
+  {
+    name: "gatd_cookie_consent",
+    technology: "Browser local storage",
+    provider: "GATD (first-party)",
+    purpose:
+      "Remembers your cookie choices (which optional categories you accepted or rejected) so we don’t ask you on every visit.",
+    type: "Essential",
+    duration: "12 months, or until you change your choice or clear your browser data",
+  },
   {
     name: "gatd_site_popup_seen",
     technology: "Browser session storage / local storage",
@@ -34,7 +45,7 @@ const cookieInventory = [
     technology: "Google Analytics 4 (gtag.js) cookies",
     provider: "Google LLC",
     purpose:
-      "Measures website traffic and how visitors use the website (e.g. pages visited, time on site, traffic sources) by distinguishing between visitors and sessions.",
+      "Measures website traffic and how visitors use the website (e.g. pages visited, time on site, traffic sources) by distinguishing between visitors and sessions. Only set if you accept Analytics cookies.",
     type: "Analytics",
     duration: "Up to 2 years",
   },
@@ -43,8 +54,8 @@ const cookieInventory = [
     technology: "Third-party embedded map",
     provider: "Google LLC",
     purpose:
-      "Displays the GATD office location map. Google may set its own cookies when the map loads.",
-    type: "Functional",
+      "Displays the GATD office location map. The map only loads if you allow External media cookies or click “Load map”; Google may then set its own cookies.",
+    type: "External media",
     duration: "Set by Google, as described in Google’s privacy policy",
   },
   {
@@ -52,8 +63,8 @@ const cookieInventory = [
     technology: "Third-party embedded video player",
     provider: "Google LLC (YouTube) / Vimeo, Inc.",
     purpose:
-      "Plays programme videos where a video has been added to a programme. The provider may set its own cookies when the video is played.",
-    type: "Functional",
+      "Plays a programme video only when you choose to watch it. YouTube videos use YouTube’s privacy-enhanced mode, and Vimeo is asked not to track viewers. The provider may still set its own cookies once the video plays.",
+    type: "External media",
     duration: "Set by the video provider, as described in its privacy policy",
   },
 ];
@@ -96,6 +107,15 @@ function CookieTable() {
 
 const linkClass = "font-medium text-[#D52029] hover:text-red-700 underline-offset-4 hover:underline";
 
+// Opens the cookie preferences panel (same as the footer "Cookie Settings" link).
+function CookieSettingsLink() {
+  return (
+    <button type="button" onClick={openCookieSettings} className={linkClass}>
+      Cookie Settings
+    </button>
+  );
+}
+
 const sections = [
   {
     id: "what-are-cookies",
@@ -117,17 +137,14 @@ const sections = [
     title: "2. Why GATD Uses Cookies",
     body: (
       <>
-        <p>We may use cookies for purposes including:</p>
+        <p>We use cookies and similar technologies to:</p>
         <Bullets
           items={[
-            "Operating essential website functions",
-            "Improving website performance",
-            "Remembering preferences",
-            "Understanding how visitors use our website",
-            "Measuring website traffic",
-            "Improving our content and services",
-            "Maintaining website security",
-            "Supporting marketing or communications activities where applicable",
+            "Operate essential website functions",
+            "Remember your cookie choices and simple preferences",
+            "Measure website traffic and understand how visitors use our website (only with your consent)",
+            "Show embedded content such as our location map (only with your consent)",
+            "Improve our content and services",
           ]}
         />
       </>
@@ -139,44 +156,42 @@ const sections = [
     body: (
       <>
         <SubHeading>3.1 Strictly Necessary Cookies</SubHeading>
-        <p>These cookies may be required for the website to function properly.</p>
-        <p>They may support:</p>
+        <p>These are needed for the website to work and cannot be switched off. They are used to:</p>
         <Bullets
           items={[
-            "Security",
-            "Page navigation",
-            "Form functionality",
-            "Session management",
-            "Basic website operation",
+            "Remember your cookie choices",
+            "Keep authorised GATD staff signed in to the website administration area",
           ]}
         />
+
+        <SubHeading>3.2 Functional Storage</SubHeading>
         <p>
-          These cookies generally cannot be disabled through standard website cookie controls where they are essential to the operation of the website.
+          We store a small note in your browser so the website announcement pop-up is not shown to you repeatedly.
         </p>
 
-        <SubHeading>3.2 Functional Cookies</SubHeading>
-        <p>Functional cookies may allow the website to remember preferences and provide enhanced functionality.</p>
-
-        <SubHeading>3.3 Analytics and Performance Cookies</SubHeading>
-        <p>GATD may use analytics technologies to understand how visitors use the website.</p>
-        <p>These technologies may collect information such as:</p>
+        <SubHeading>3.3 Analytics Cookies</SubHeading>
+        <p>
+          With your consent, we use Google Analytics 4 to understand how visitors use the website. Google Analytics may collect information such as:
+        </p>
         <Bullets
           items={[
-            "Pages visited",
-            "Time spent on pages",
-            "General geographic information",
+            "Pages visited and time spent on pages",
+            "General geographic location (city or country level)",
             "Device and browser information",
-            "Traffic sources",
-            "Website interactions",
+            "How you arrived at our website (traffic sources)",
           ]}
         />
-        <p>GATD will only identify specific analytics providers actually implemented on the website.</p>
-
-        <SubHeading>3.4 Marketing Cookies</SubHeading>
         <p>
-          Where applicable, GATD may use marketing or advertising technologies to understand engagement with our digital communications or to provide relevant marketing.
+          Google Analytics does not load, and sets no cookies, unless you accept Analytics cookies.
         </p>
-        <p>Such technologies will only be used where appropriately implemented and permitted.</p>
+
+        <SubHeading>3.4 External Media</SubHeading>
+        <p>
+          Some pages show content from other websites, such as the Google Maps location map on our Contact page and programme videos hosted on YouTube or Vimeo. These providers may set their own cookies. The map only loads if you allow External media or choose to load it, and a video only loads when you choose to play it.
+        </p>
+
+        <SubHeading>3.5 Marketing Cookies</SubHeading>
+        <p>We do not currently use marketing or advertising cookies.</p>
       </>
     ),
   },
@@ -185,21 +200,23 @@ const sections = [
     title: "4. Third-Party Technologies",
     body: (
       <>
-        <p>Certain website functions may be provided by third-party services.</p>
-        <p>Examples may include:</p>
+        <p>The following third-party services are used on our website:</p>
         <Bullets
           items={[
-            "Website analytics providers",
-            "Video hosting platforms",
-            "Social media platforms",
-            "Registration platforms",
-            "Payment providers",
-            "Email marketing platforms",
-            "Security providers",
+            "Google Analytics (Google LLC) — website analytics, only with your consent",
+            "Google Maps (Google LLC) — the location map on our Contact page",
+            "YouTube (Google LLC) and Vimeo, Inc. — programme videos, when you choose to play them",
           ]}
         />
-        <p>Third-party providers may place their own cookies or similar technologies on your device.</p>
-        <p>Their use of information is governed by their respective privacy policies and terms.</p>
+        <p>
+          These providers may place their own cookies or similar technologies on your device. Their use of information is governed by their respective privacy policies and terms.
+        </p>
+        <p>
+          Our social media share buttons and links are plain links: they do not load anything from those platforms until you click them.
+        </p>
+        <p>
+          Some images and icons are loaded from content delivery networks (flagcdn.com and cdnjs.cloudflare.com). These do not set cookies, but, as with any web request, they receive your IP address.
+        </p>
       </>
     ),
   },
@@ -208,14 +225,8 @@ const sections = [
     title: "5. Cookies Currently Used on the GATD Website",
     body: (
       <>
-        <p>The website administrator should maintain an accurate cookie inventory.</p>
-        <p>
-          Before publication, the following table should be completed based on an actual scan of the live website:
-        </p>
+        <p>The table below lists the cookies and similar technologies currently used on our website:</p>
         <CookieTable />
-        <p>
-          Important: GATD should not list Google Analytics, Meta Pixel, LinkedIn Insight Tag, YouTube cookies or other technologies unless they are actually installed or activated on the website.
-        </p>
       </>
     ),
   },
@@ -224,17 +235,22 @@ const sections = [
     title: "6. Managing Cookies",
     body: (
       <>
-        <p>Depending on the technology used, you may be able to:</p>
+        <p>You can manage cookies in the following ways:</p>
         <Bullets
           single
           items={[
-            "Accept or reject optional cookies through the website’s cookie-consent mechanism",
-            "Change cookie preferences",
-            "Delete existing cookies through your browser",
+            "Accept or reject optional cookies using the cookie banner shown on your first visit",
+            "Change your choices at any time using the “Cookie Settings” link in the website footer",
+            "Delete existing cookies through your browser settings",
             "Configure your browser to block certain cookies",
           ]}
         />
-        <p>Disabling some cookies may affect website functionality.</p>
+        <p>
+          You can open your cookie preferences now: <CookieSettingsLink />.
+        </p>
+        <p>
+          Rejecting optional cookies does not stop the website from working. Some embedded content, such as the location map, will not load until you allow it.
+        </p>
       </>
     ),
   },
@@ -244,10 +260,16 @@ const sections = [
     body: (
       <>
         <p>
-          Where required, GATD will provide an appropriate mechanism for visitors to manage consent for non-essential cookies.
+          When you first visit our website, a cookie banner asks whether you accept optional cookies. You can choose “Accept all”, “Reject all” or “Manage preferences”.
         </p>
         <p>
-          The website should distinguish between cookies that are necessary for website operation and optional cookies where appropriate.
+          Analytics and External media cookies are switched off until you agree to them. Strictly necessary storage is always active because the website needs it to work.
+        </p>
+        <p>
+          Your choice is remembered for 12 months, after which we ask again. We will also ask again if we add new types of optional cookies.
+        </p>
+        <p>
+          You can withdraw or change your consent at any time using <CookieSettingsLink /> in the footer. If you withdraw consent for Analytics, Google Analytics stops and its cookies are deleted from your browser.
         </p>
       </>
     ),
@@ -308,7 +330,7 @@ export default function CookiePolicyContent() {
       eyebrow="Global Association for Training and Development (GATD)"
       title="COOKIE POLICY"
       company="GATD Pte. Ltd."
-      dates={["Effective Date: [05.10.2026]", "Last Updated: [05.10.2026]"]}
+      dates={["Effective Date: 05.10.2026", "Last Updated: 08.10.2026"]}
       banner="/images/legal/cookie-policy-banner.jpg"
       tocLabel="Cookie Policy"
       contact={{ label: "Questions about cookies", email: "info@globalatd.com" }}

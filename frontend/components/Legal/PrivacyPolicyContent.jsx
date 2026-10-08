@@ -420,7 +420,7 @@ export default function PrivacyPolicyContent() {
       title="PRIVACY POLICY"
       company="GATD Pte. Ltd."
       meta={["Singapore"]}
-      dates={["Effective Date: [05.10.2026]", "Last Updated: [05.10.2026]"]}
+      dates={["Effective Date: 05.10.2026", "Last Updated: 05.10.2026"]}
       banner="/images/legal/privacy-policy-banner.jpg"
       tocLabel="Privacy Policy"
       contact={{ label: "Data Protection Officer", email: "ceo@globalatd.com" }}

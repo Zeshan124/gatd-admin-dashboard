@@ -206,7 +206,7 @@ export default function DisclaimerContent() {
       eyebrow="Global Association for Training and Development (GATD)"
       title="DISCLAIMER"
       company="GATD Pte. Ltd."
-      dates={["Effective Date: [05.10.2026]", "Last Updated: [05.10.2026]"]}
+      dates={["Effective Date: 05.10.2026", "Last Updated: 05.10.2026"]}
       banner="/images/legal/disclaimer-banner.jpg"
       tocLabel="Disclaimer"
       contact={{ label: "Questions about this Disclaimer", email: "info@globalatd.com" }}

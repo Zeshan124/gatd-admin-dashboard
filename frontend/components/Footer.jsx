@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { openCookieSettings } from "@/lib/consent";
 // import { usePathname } from "next/navigation"; // MADANI footer logo (commented out)
 
 // Newsletter subscription endpoint — reuses the configured API base.
@@ -340,6 +341,14 @@ export default function Footer() {
                 </Link>
               </span>
             ))}
+            <span className="text-white/30 mx-3">|</span>
+            <button
+              type="button"
+              onClick={openCookieSettings}
+              className="text-white/70 hover:text-white transition-colors duration-200"
+            >
+              Cookie Settings
+            </button>
           </p>
         </div>
       </div>

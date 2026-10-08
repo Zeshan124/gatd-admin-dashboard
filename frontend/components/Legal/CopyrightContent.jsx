@@ -272,7 +272,7 @@ export default function CopyrightContent() {
       eyebrow="Global Association for Training and Development (GATD)"
       title="COPYRIGHT & INTELLECTUAL PROPERTY NOTICE"
       company="GATD Pte. Ltd."
-      dates={["Effective Date: [05.10.2026]", "Last Updated: [05.10.2026]"]}
+      dates={["Effective Date: 05.10.2026", "Last Updated: 05.10.2026"]}
       banner="/images/legal/copyright-and-intellectual-property-banner.jpg"
       tocLabel="Copyright & IP Notice"
       contact={{ label: "Permission Requests", email: "info@globalatd.com" }}

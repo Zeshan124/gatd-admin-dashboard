@@ -17,13 +17,15 @@ const countries = [
 
 // Turn a video URL into an embeddable source. Supports YouTube, Vimeo, and
 // direct video files; anything else is embedded in an iframe as-is.
+// Privacy: YouTube uses its privacy-enhanced domain (no cookies until the video
+// plays) and Vimeo is asked not to track the viewer (dnt=1).
 function parseVideo(url) {
   if (!url) return null;
   const u = String(url).trim();
-  let m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-  if (m) return { type: "iframe", src: `https://www.youtube.com/embed/${m[1]}?autoplay=1&rel=0` };
+  let m = u.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if (m) return { type: "iframe", src: `https://www.youtube-nocookie.com/embed/${m[1]}?autoplay=1&rel=0` };
   m = u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  if (m) return { type: "iframe", src: `https://player.vimeo.com/video/${m[1]}?autoplay=1` };
+  if (m) return { type: "iframe", src: `https://player.vimeo.com/video/${m[1]}?autoplay=1&dnt=1` };
   if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(u)) return { type: "video", src: u };
   return { type: "iframe", src: u };
 }

@@ -230,7 +230,7 @@ export default function LegalPage({
           </div>
 
           {/* Banner Image */}
-          {banner && (
+          {/* {banner && (
             // Same banner height as the rest of the site (Services / Contact heroes).
             // The image adapts instead: anchored toward the right, where the legal
             // artwork sits, so narrower screens crop the sky rather than the subject.
@@ -246,7 +246,7 @@ export default function LegalPage({
                 priority
               />
             </div>
-          )}
+          )} */}
         </div>
       </section>
 
