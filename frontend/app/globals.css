@@ -24,3 +24,19 @@ body {
   color: var(--foreground);
   font-family: var(--font-poppins), Arial, Helvetica, sans-serif;
 }
+
+/* Slim scrollbar for legal-page table of contents */
+.toc-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+.toc-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.toc-scroll::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 9999px;
+}
+.toc-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d52029;
+}

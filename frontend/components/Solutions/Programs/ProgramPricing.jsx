@@ -22,7 +22,9 @@ export default function ProgramPricing({
   const details = [
     dates ? { label: "Dates", value: dates, Icon: Calendar } : null,
     location ? { label: "Location", value: location, Icon: MapPin } : null,
-    investment ? { label: "Investment", value: investment, Icon: Coins } : null,
+    // preserveSpaces: keep runs of spaces typed in the admin "Pricing period"
+    // (browsers collapse them to one by default).
+    investment ? { label: "Investment", value: investment, Icon: Coins, preserveSpaces: true } : null,
   ].filter(Boolean);
 
   if (!description && details.length === 0) return null;
@@ -68,7 +70,7 @@ export default function ProgramPricing({
                 hasBoth ? "lg:col-span-7" : "max-w-3xl"
               }`}
             >
-              {details.map(({ label, value, Icon }) => (
+              {details.map(({ label, value, Icon, preserveSpaces }) => (
                 <div
                   key={label}
                   className="flex items-center gap-4 px-5 py-4 sm:px-6 sm:py-5"
@@ -78,7 +80,11 @@ export default function ProgramPricing({
                   </span>
                   <div className="min-w-0">
                     <dt className="text-sm font-medium text-slate-500">{label}</dt>
-                    <dd className="mt-0.5 text-base sm:text-lg font-semibold leading-snug text-[#414143] break-words">
+                    <dd
+                      className={`mt-0.5 text-base sm:text-lg font-semibold leading-snug text-[#414143] break-words ${
+                        preserveSpaces ? "whitespace-pre-wrap" : ""
+                      }`}
+                    >
                       {value}
                     </dd>
                   </div>

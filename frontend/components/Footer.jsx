@@ -18,6 +18,15 @@ const quickLinks = [
   { label: "Contact us", href: "/contact" },
 ];
 
+const legalLinks = [
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Terms & Conditions", href: "/terms-and-conditions" },
+  { label: "Disclaimer", href: "/disclaimer" },
+  { label: "Cancellation & Refund Policy", href: "/cancellation-and-refund-policy" },
+  { label: "Copyright & IP Notice", href: "/copyright-and-intellectual-property" },
+  { label: "Cookie Policy", href: "/cookie-policy" },
+];
+
 const socialLinks = [
   {
     label: "Facebook",
@@ -318,6 +327,19 @@ export default function Footer() {
             No.: <span className="text-white font-bold">202400505K</span> |{" "}
             <span className="text-white font-bold">© 2026 GATD PTE Ltd.</span>{" "}
             All Rights Reserved.
+          </p>
+          <p className="text-xs sm:text-sm text-center mt-2">
+            {legalLinks.map((link, i) => (
+              <span key={link.href}>
+                {i > 0 && <span className="text-white/30 mx-3">|</span>}
+                <Link
+                  href={link.href}
+                  className="text-white/70 hover:text-white transition-colors duration-200"
+                >
+                  {link.label}
+                </Link>
+              </span>
+            ))}
           </p>
         </div>
       </div>

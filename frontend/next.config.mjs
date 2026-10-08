@@ -7,7 +7,11 @@
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig = {
-  ...(isProd ? { output: "export" } : {}),
+  // The dev server uses its own build dir so running `next build` while
+  // `next dev` is up doesn't overwrite its files (which breaks its CSS).
+  // Production keeps the default .next so the static export still lands in `out/`
+  // (with output: "export", a custom distDir would replace `out/`).
+  ...(isProd ? { output: "export" } : { distDir: ".next-dev" }),
   images: { unoptimized: true },
   // Emit `route/index.html` per page so Apache/cPanel serves clean URLs
   // (and admin deep links / refreshes work) without custom rewrites.
