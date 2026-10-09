@@ -496,7 +496,7 @@ export default function ProgramRegistration({
           )}
 
           {/* Submit */}
-          <div className="sm:col-span-2 mt-2">
+          <div className="sm:col-span-2 mt-2 flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-4">
             <button type="submit" disabled={status === "loading"}
               className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-[#D52029] hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5">
               {status === "loading" && (
@@ -507,9 +507,9 @@ export default function ProgramRegistration({
               )}
               {status === "loading" ? "Submitting..." : "Submit now"}
             </button>
-            <div className="mt-4">
+            <div>
               <Link href="/cancellation-and-refund-policy" target="_blank" rel="noopener noreferrer"
-                className="text-sm font-semibold text-[#D52029] underline underline-offset-10 decoration-[#D52029] hover:text-red-700 transition-colors duration-200">
+                className="text-sm font-semibold text-[#414143] underline underline-offset-10 decoration-[#414143] hover:text-[#D52029] hover:decoration-[#D52029] transition-colors duration-200">
                 Registration &amp; Cancellation
               </Link>
             </div>
