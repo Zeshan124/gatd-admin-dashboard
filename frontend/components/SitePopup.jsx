@@ -121,8 +121,11 @@ export function SitePopupCard({ popup, onClose, preview = false }) {
       {/* Image — on top for mobile, diagonal right panel from md up */}
       {hasImage && (
         <>
-          <div className="md:hidden h-36 sm:h-44 w-full">
-            <img src={popup.image} alt="" className="w-full h-full object-cover" />
+          {/* Mobile: the full artwork fills the card behind the content. A white wash —
+              solid where the text sits, thinner on the right — keeps the content prominent. */}
+          <div className="md:hidden absolute inset-0" aria-hidden="true">
+            <img src={popup.image} alt="" className="absolute inset-0 w-full h-full object-cover object-right" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/55" />
           </div>
           <div className="hidden md:block absolute inset-y-0 right-0 w-[48%]" aria-hidden="true">
             <img

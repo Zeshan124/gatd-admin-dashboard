@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 const countries = [
   { code: "AE", name: "UAE", dial: "+971" },
@@ -506,6 +507,12 @@ export default function ProgramRegistration({
               )}
               {status === "loading" ? "Submitting..." : "Submit now"}
             </button>
+            <div className="mt-4">
+              <Link href="/cancellation-and-refund-policy" target="_blank" rel="noopener noreferrer"
+                className="text-sm font-semibold text-[#D52029] underline underline-offset-10 decoration-[#D52029] hover:text-red-700 transition-colors duration-200">
+                Registration &amp; Cancellation
+              </Link>
+            </div>
           </div>
 
         </form>
