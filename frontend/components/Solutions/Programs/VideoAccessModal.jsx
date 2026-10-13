@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import FormPrivacyNotice from "@/components/FormPrivacyNotice";
 
 // Reuses the brochure-leads pipeline; the lead is tagged source_type = "video".
 const BROCHURE_API =
@@ -203,9 +204,9 @@ export default function VideoAccessModal({
               >
                 {submitting ? "Submitting…" : "Watch Video"}
               </button>
-              <p className="text-xs text-slate-400 text-center leading-relaxed">
-                By submitting, you agree to receive programme information from GATD. We respect your privacy.
-              </p>
+              <FormPrivacyNotice>
+                By submitting, you agree that GATD may use your details to give you access to this video and contact you about this programme.
+              </FormPrivacyNotice>
             </form>
           )}
         </div>

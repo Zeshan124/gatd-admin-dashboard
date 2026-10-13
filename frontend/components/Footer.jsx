@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { openCookieSettings } from "@/lib/consent";
+import FormPrivacyNotice, { NoticeLink } from "@/components/FormPrivacyNotice";
 // import { usePathname } from "next/navigation"; // MADANI footer logo (commented out)
 
 // Newsletter subscription endpoint — reuses the configured API base.
@@ -313,6 +314,10 @@ export default function Footer() {
                 >
                   {status === "submitting" ? "Subscribing…" : "Subscribe"}
                 </button>
+                <FormPrivacyNotice tone="dark" align="left">
+                  By subscribing, you agree to receive email updates from GATD about our programmes, events and news. You can unsubscribe at any time by{" "}
+                  <NoticeLink href="/contact" tone="dark">contacting us</NoticeLink>.
+                </FormPrivacyNotice>
               </form>
             )}
           </div>

@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/childSolutionsController");
 const programs = require("../controllers/solutionProgramsController");
-const { requireAdmin } = require("../middleware/auth");
+const { requirePermission } = require("../middleware/auth");
+// Dashboard section "solutions": GET needs view access; changes need manage access.
+const auth = requirePermission("solutions");
 
-router.use(requireAdmin);
+router.use(auth);
 
 router.get("/", ctrl.list);
 router.post("/", ctrl.create);

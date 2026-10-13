@@ -447,22 +447,27 @@ export const sitemapApi = {
 };
 
 // ── Auth ────────────────────────────────────────────────────────────────────
-// Signup is gated by a key the backend checks (x-signup-key). It's exposed to
-// the client via NEXT_PUBLIC_SIGNUP_KEY — anything NEXT_PUBLIC_* ends up in the
-// bundle, so keep signup disabled in production (or move account creation
-// server-side) once the initial admin accounts exist.
-export const SIGNUP_KEY =
-  process.env.NEXT_PUBLIC_SIGNUP_KEY || "change-this-signup-key";
-
+// Self sign-up is disabled; a Super Admin creates accounts (see usersApi).
 export const authApi = {
   /** → { data: { user, token } } */
   login: (email, password) =>
     request("/auth/login", { method: "POST", body: { email, password } }),
-  /** → { data: { user, token } } (token may be omitted → caller redirects to login) */
-  signup: ({ name, email, password }, signupKey) =>
-    request("/auth/signup", {
-      method: "POST",
-      body: { name, email, password },
-      headers: { "x-signup-key": signupKey || SIGNUP_KEY },
-    }),
+  /** Current account with its role + access → { data: { id, name, email, role, permissions } } */
+  me: () => request("/auth/me"),
+  /** Change the signed-in user's own password. */
+  changePassword: (currentPassword, newPassword) =>
+    request("/auth/password", { method: "PATCH", body: { currentPassword, newPassword } }),
+};
+
+// ── Dashboard accounts (Super Admin only) ───────────────────────────────────
+export const usersApi = {
+  /** → { data: { modules, levels, roles, presets } } */
+  meta: () => request("/admin/users/meta"),
+  /** → { data: [{ id, name, email, role, isActive, accessConfigured, permissions, lastLoginAt }] } */
+  list: () => request("/admin/users"),
+  /** body: { name, email, password, role, permissions, isActive } */
+  create: (body) => request("/admin/users", { method: "POST", body }),
+  /** body: any of { name, email, password, role, permissions, isActive } */
+  update: (id, body) => request(`/admin/users/${id}`, { method: "PATCH", body }),
+  remove: (id) => request(`/admin/users/${id}`, { method: "DELETE" }),
 };

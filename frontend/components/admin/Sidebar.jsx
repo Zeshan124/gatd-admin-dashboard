@@ -20,26 +20,31 @@ import {
   Map,
   X,
 } from "lucide-react";
+import { useAuth } from "@/components/admin/AuthProvider";
 
-const NAV = [
-  { label: "Overview", href: "/admin", icon: LayoutDashboard },
-  { label: "Registrations", href: "/admin/registrations", icon: ClipboardList },
-  { label: "Solutions", href: "/admin/solutions", icon: GraduationCap },
-  { label: "Programs", href: "/admin/programs", icon: Layers },
-  { label: "Subprograms", href: "/admin/subprograms", icon: BookOpen },
-  { label: "Messages", href: "/admin/messages", icon: Mail },
-  { label: "Brochure Leads", href: "/admin/brochures", icon: FileDown },
-  { label: "Blog", href: "/admin/blog", icon: Newspaper },
-  { label: "Newsletter", href: "/admin/newsletter", icon: Send },
-  { label: "Company Profile", href: "/admin/company-profile", icon: Building2 },
-  { label: "Website Popup", href: "/admin/site-popup", icon: Megaphone },
-  { label: "Accredited By", href: "/admin/accreditation", icon: Award },
-  { label: "Sitemap", href: "/admin/sitemap", icon: Map },
-  // { label: "Users", href: "/admin/users", icon: Users },
+// `module` = the access-control section (see lib/permissions.js). An item shows
+// only if the signed-in user can at least view that section.
+export const NAV = [
+  { label: "Overview", href: "/admin", icon: LayoutDashboard, module: "overview" },
+  { label: "Registrations", href: "/admin/registrations", icon: ClipboardList, module: "registrations" },
+  { label: "Solutions", href: "/admin/solutions", icon: GraduationCap, module: "solutions" },
+  { label: "Programs", href: "/admin/programs", icon: Layers, module: "solutions" },
+  { label: "Subprograms", href: "/admin/subprograms", icon: BookOpen, module: "solutions" },
+  { label: "Messages", href: "/admin/messages", icon: Mail, module: "messages" },
+  { label: "Brochure Leads", href: "/admin/brochures", icon: FileDown, module: "brochures" },
+  { label: "Blog", href: "/admin/blog", icon: Newspaper, module: "blog" },
+  { label: "Newsletter", href: "/admin/newsletter", icon: Send, module: "newsletter" },
+  { label: "Company Profile", href: "/admin/company-profile", icon: Building2, module: "company_profile" },
+  { label: "Website Popup", href: "/admin/site-popup", icon: Megaphone, module: "site_popup" },
+  { label: "Accredited By", href: "/admin/accreditation", icon: Award, module: "accreditation" },
+  { label: "Sitemap", href: "/admin/sitemap", icon: Map, module: "sitemap" },
+  { label: "Users", href: "/admin/users", icon: Users, module: "users" }, // Super Admin only
   // { label: "Activity", href: "/admin/activity", icon: Activity },
 ];
 
 export default function Sidebar({ open, onClose }) {
+  const { can } = useAuth();
+  const items = NAV.filter((item) => can(item.module, "view"));
   const rawPathname = usePathname();
   // `trailingSlash: true` yields paths like "/admin/registrations/"; normalize
   // so the active-link exact match on "/admin" still works.
@@ -84,7 +89,7 @@ export default function Sidebar({ open, onClose }) {
 
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {NAV.map((item) => {
+          {items.map((item) => {
             const active =
               item.href === "/admin"
                 ? pathname === "/admin"

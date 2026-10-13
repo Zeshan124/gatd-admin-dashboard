@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import FormPrivacyNotice from "@/components/FormPrivacyNotice";
 
 // Backend endpoint — override per-environment via NEXT_PUBLIC_CONTACT_API.
 const CONTACT_API =
@@ -216,6 +217,10 @@ export default function FeelFree() {
             {status === "error" && (
               <p className="text-sm text-red-600">{errorMsg || "Something went wrong. Please try again."}</p>
             )}
+
+            <FormPrivacyNotice align="left">
+              By submitting this form, you agree that GATD may use the details you provide to respond to your enquiry.
+            </FormPrivacyNotice>
 
             <div>
               <button type="submit" disabled={status === "loading"}

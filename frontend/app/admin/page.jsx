@@ -14,6 +14,7 @@ import {
   Newspaper,
 } from "lucide-react";
 import { statsApi, registrationsApi, blogsApi } from "@/lib/adminApi";
+import { useAuth } from "@/components/admin/AuthProvider";
 import { formatMoney, formatDate } from "@/lib/format";
 import StatCard from "@/components/admin/StatCard";
 import StatusBadge, { REGISTRATION_STATUSES } from "@/components/admin/StatusBadge";
@@ -55,13 +56,21 @@ export default function AdminOverview() {
   const [blogLoading, setBlogLoading] = useState(true);
   const [blogError, setBlogError] = useState("");
 
+  // The recent-registrations list and blog panel need their own section access;
+  // the statistics come with Overview access.
+  const { can } = useAuth();
+  const canRegistrations = can("registrations");
+  const canBlog = can("blog");
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const [statsRes, listRes] = await Promise.all([
         statsApi.overview(),
-        registrationsApi.list({ page: 1, pageSize: 6, sort: "-created_at" }),
+        canRegistrations
+          ? registrationsApi.list({ page: 1, pageSize: 6, sort: "-created_at" })
+          : Promise.resolve({ data: [] }),
       ]);
       setStats(statsRes?.data || null);
       setRecent(listRes.data || []);
@@ -70,9 +79,13 @@ export default function AdminOverview() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canRegistrations]);
 
   const loadBlog = useCallback(async () => {
+    if (!canBlog) {
+      setBlogLoading(false);
+      return;
+    }
     setBlogLoading(true);
     setBlogError("");
     try {
@@ -94,7 +107,7 @@ export default function AdminOverview() {
     } finally {
       setBlogLoading(false);
     }
-  }, []);
+  }, [canBlog]);
 
   useEffect(() => {
     load();
@@ -228,6 +241,7 @@ export default function AdminOverview() {
           )}
         </div>
 
+        {canRegistrations && (
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <h3 className="text-sm font-bold text-slate-700">Recent registrations</h3>
@@ -277,9 +291,11 @@ export default function AdminOverview() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Blog activity */}
+      {canBlog && (
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-700 inline-flex items-center gap-2">
@@ -344,6 +360,7 @@ export default function AdminOverview() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import FormPrivacyNotice from "@/components/FormPrivacyNotice";
 
 // Backend endpoint — override via NEXT_PUBLIC_BROCHURE_API.
 const BROCHURE_API =
@@ -157,9 +158,9 @@ export default function SolutionBrochureModal({
               <button type="submit" disabled={submitting} className="w-full py-3.5 bg-[#D52029] hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 mt-1">
                 {submitting ? "Submitting…" : "Download Brochure"}
               </button>
-              <p className="text-xs text-slate-400 text-center leading-relaxed">
-                By submitting, you agree to receive programme information from GATD. We respect your privacy.
-              </p>
+              <FormPrivacyNotice>
+                By submitting, you agree that GATD may use your details to send you this brochure and contact you about this programme.
+              </FormPrivacyNotice>
             </form>
           )}
         </div>

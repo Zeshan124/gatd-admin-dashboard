@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, Bell, LogOut, ChevronDown } from "lucide-react";
+import { Menu, Bell, LogOut, ChevronDown, KeyRound } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthProvider";
+import ChangePasswordModal from "@/components/admin/ChangePasswordModal";
+import { ROLE_LABELS } from "@/lib/permissions";
 
 export default function Topbar({ onMenu, title }) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const roleLabel = ROLE_LABELS[user?.role] || user?.role || "—";
 
   const initial = (user?.name || "A").charAt(0).toUpperCase();
 
@@ -50,8 +54,8 @@ export default function Topbar({ onMenu, title }) {
               <p className="text-sm font-semibold text-slate-800">
                 {user?.name || "Admin"}
               </p>
-              <p className="text-xs text-slate-400 capitalize">
-                {user?.role || "—"}
+              <p className="text-xs text-slate-400">
+                {roleLabel}
               </p>
             </div>
             <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />
@@ -73,6 +77,15 @@ export default function Topbar({ onMenu, title }) {
                   </p>
                 </div>
                 <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setPasswordOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
+                >
+                  <KeyRound className="w-4 h-4" /> Change password
+                </button>
+                <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
                 >
@@ -83,6 +96,8 @@ export default function Topbar({ onMenu, title }) {
           )}
         </div>
       </div>
+
+      {passwordOpen && <ChangePasswordModal onClose={() => setPasswordOpen(false)} />}
     </header>
   );
 }

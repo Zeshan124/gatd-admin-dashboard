@@ -20,6 +20,7 @@
 --   * newsletter_subscribers table         (footer newsletter form)
 --   * accreditation_settings table         (Program pages "Accredited By" heading + logos)
 --   * site_popup        table              (website popup shown on site open)
+--   * admin_users       permissions        (per-person dashboard access) + Super Admin promotion
 --
 -- NOTE: the MADANI subprogram content is NOT here — import madani_subprogram.sql
 -- separately (after editing its @parent_slug), it is a one-time content insert.
@@ -185,3 +186,12 @@ VALUES (1, 0, 'session', 1, 'Upcoming Programme', 'Strategic Leadership', 'for P
   '2026-11-23', '2026-11-27', 'Kuala Lumpur', 'Malaysia', 'Investment', 'SGD 4,500', '/person',
   '10% Group Discount (5+)', 'Explore the Programme', '/solutions')
 ON DUPLICATE KEY UPDATE id = id;
+
+-- Dashboard accounts — per-person access control ------------------------------
+-- permissions: {section: "view"|"manage"}; NULL = legacy account, full access
+-- until a Super Admin saves its access in Admin → Users.
+ALTER TABLE admin_users
+  ADD COLUMN IF NOT EXISTS permissions JSON NULL AFTER role;
+
+-- Promote the live Super Admin account (no-op if the email doesn't exist).
+UPDATE admin_users SET role = 'super_admin' WHERE email = 'superadmin@globalatd.com';

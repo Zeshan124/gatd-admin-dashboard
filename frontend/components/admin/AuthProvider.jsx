@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { authApi } from "@/lib/adminApi";
+import { canAccess } from "@/lib/permissions";
 
 const TOKEN_KEY = "gatd_admin_token";
 const USER_KEY = "gatd_admin_user";
@@ -56,22 +57,37 @@ export function AuthProvider({ children }) {
     [persist]
   );
 
-  const signup = useCallback(
-    async (payload, signupKey) => {
-      const res = await authApi.signup(payload, signupKey);
-      const data = res?.data || res;
-      // Some backends auto-issue a token on signup; if so, log in immediately.
-      if (data?.token) persist(data.token, data.user);
-      return data;
-    },
-    [persist]
-  );
-
   const logout = useCallback(() => persist(null, null), [persist]);
+
+  // Re-read the signed-in account (role + access) from the server. Called on load
+  // so a Super Admin's changes show up in menus/pages without signing out.
+  // A 401 here is handled by the API client (session cleared → login page).
+  const refreshUser = useCallback(async () => {
+    const tk = window.localStorage.getItem(TOKEN_KEY);
+    if (!tk) return null;
+    try {
+      const res = await authApi.me();
+      const fresh = res?.data || null;
+      if (fresh) persist(tk, fresh);
+      return fresh;
+    } catch {
+      return null; // network hiccup — keep the cached account
+    }
+  }, [persist]);
+
+  useEffect(() => {
+    if (hydrated && token) refreshUser();
+    // Only on first load (and after login, which sets a new token).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, token]);
+
+  /** can("registrations") / can("blog", "manage") — what to show; the server enforces it. */
+  const can = useCallback((moduleKey, level = "view") => canAccess(user, moduleKey, level), [user]);
+  const isSuperAdmin = user?.role === "super_admin";
 
   return (
     <AuthContext.Provider
-      value={{ token, user, hydrated, login, signup, logout }}
+      value={{ token, user, hydrated, login, logout, refreshUser, can, isSuperAdmin }}
     >
       {children}
     </AuthContext.Provider>

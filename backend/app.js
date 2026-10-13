@@ -25,6 +25,7 @@ const uploadRoutes = require("./src/routes/uploadRoutes");
 const blogRoutes = require("./src/routes/blogRoutes");
 const publicBlogRoutes = require("./src/routes/publicBlogRoutes");
 const sitemapRoutes = require("./src/routes/sitemapRoutes");
+const adminUsersRoutes = require("./src/routes/adminUsersRoutes");
 const { sitemapXml } = require("./src/controllers/sitemapController");
 const { sendError } = require("./src/utils/http");
 
@@ -125,6 +126,7 @@ app.use("/apis/public/blogs", publicBlogRoutes);
 app.use("/apis/admin/uploads", uploadRoutes);
 app.use("/apis/admin/blogs", blogRoutes);
 app.use("/apis/admin/sitemap", sitemapRoutes);
+app.use("/apis/admin/users", adminUsersRoutes);
 
 // 404 fallback
 app.use((req, res) => sendError(res, 404, "NOT_FOUND", "Resource not found"));

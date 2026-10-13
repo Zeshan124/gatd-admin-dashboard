@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import FormPrivacyNotice, { NoticeLink } from "@/components/FormPrivacyNotice";
 
 const countries = [
   { code: "AE", name: "UAE", dial: "+971" },
@@ -494,6 +495,13 @@ export default function ProgramRegistration({
               {errorMsg}
             </div>
           )}
+
+          {/* Privacy / terms notice */}
+          <FormPrivacyNotice align="left" className="sm:col-span-2">
+            By submitting this registration, you agree that GATD may use your details to process your registration and contact you about this programme, and you accept our{" "}
+            <NoticeLink href="/terms-and-conditions">Terms &amp; Conditions</NoticeLink> and{" "}
+            <NoticeLink href="/cancellation-and-refund-policy">Cancellation &amp; Refund Policy</NoticeLink>.
+          </FormPrivacyNotice>
 
           {/* Submit */}
           <div className="sm:col-span-2 mt-2 flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-4">

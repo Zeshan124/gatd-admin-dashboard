@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthProvider";
@@ -109,13 +108,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-sm text-slate-500 mt-6 text-center">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/admin/signup"
-              className="text-brand font-semibold hover:text-brand-dark"
-            >
-              Create one
-            </Link>
+            Need an account? Ask a Super Admin to create one for you.
           </p>
         </div>
       </div>

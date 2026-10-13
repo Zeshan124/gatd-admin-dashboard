@@ -2,68 +2,54 @@ const { query } = require("../config/db");
 const { hashPassword, verifyPassword } = require("../utils/password");
 const { signToken } = require("../utils/jwt");
 const { sendError } = require("../utils/http");
+const { effectivePermissions } = require("../utils/permissions");
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+/** Account shape sent to the dashboard (never includes the password hash). */
 function publicUser(u) {
-  return { id: u.id, name: u.name, email: u.email, role: u.role };
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    permissions: effectivePermissions(u),
+  };
 }
 
 /**
- * POST /apis/auth/signup
- * Create a dashboard account. Guarded by a shared secret: the caller must send
- * header `x-signup-key` matching ADMIN_SIGNUP_KEY. Returns the user + a token.
+ * POST /apis/auth/signup — DISABLED.
+ * Dashboard accounts are now created by a Super Admin in Admin → Users, so
+ * nobody can register themselves (or pick their own role).
  */
 async function signup(req, res) {
+  return sendError(
+    res,
+    403,
+    "SIGNUP_DISABLED",
+    "Self sign-up is disabled. Please ask a Super Admin to create your account."
+  );
+}
+
+/** Find an account by email; tolerates the `permissions` column not existing yet. */
+async function findByEmail(email) {
   try {
-    const configuredKey = process.env.ADMIN_SIGNUP_KEY || "";
-    if (!configuredKey) {
-      return sendError(res, 403, "SIGNUP_DISABLED", "Signup is disabled (ADMIN_SIGNUP_KEY is not set)");
-    }
-    if ((req.headers["x-signup-key"] || "") !== configuredKey) {
-      return sendError(res, 403, "FORBIDDEN", "Invalid signup key");
-    }
-
-    const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
-    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
-    const password = typeof req.body.password === "string" ? req.body.password : "";
-
-    const fields = {};
-    if (!name || name.length > 160) fields.name = "Name is required (max 160 chars)";
-    if (!email || email.length > 255 || !EMAIL_RE.test(email)) fields.email = "Must be a valid email address";
-    if (!password || password.length < 8) fields.password = "Password must be at least 8 characters";
-    if (Object.keys(fields).length) {
-      return sendError(res, 422, "VALIDATION_ERROR", "One or more fields are invalid", fields);
-    }
-
-    const role = req.body.role === "super_admin" || req.body.role === "viewer" ? req.body.role : "admin";
-    const passwordHash = await hashPassword(password);
-
-    let result;
-    try {
-      result = await query(
-        `INSERT INTO admin_users (name, email, password_hash, role) VALUES (?, ?, ?, ?)`,
-        [name, email, passwordHash, role]
-      );
-    } catch (err) {
-      if (err && err.code === "ER_DUP_ENTRY") {
-        return sendError(res, 409, "EMAIL_TAKEN", "An account with this email already exists");
-      }
-      throw err;
-    }
-
-    const user = { id: result.insertId, name, email, role };
-    const token = signToken(user);
-    return res.status(201).json({ data: { user: publicUser(user), token } });
+    const rows = await query(
+      `SELECT id, name, email, password_hash, role, permissions, is_active FROM admin_users WHERE email = ? LIMIT 1`,
+      [email]
+    );
+    return rows[0] || null;
   } catch (err) {
-    console.error("[auth] signup error:", err);
-    return sendError(res, 500, "SERVER_ERROR", "Could not create account");
+    if (err && err.code !== "ER_BAD_FIELD_ERROR") throw err;
+    const rows = await query(
+      `SELECT id, name, email, password_hash, role, is_active FROM admin_users WHERE email = ? LIMIT 1`,
+      [email]
+    );
+    return rows[0] ? { ...rows[0], permissions: null } : null;
   }
 }
 
 /**
  * POST /apis/auth/login
- * Email + password -> JWT access token.
+ * Email + password -> JWT access token + the account's role and access.
  */
 async function login(req, res) {
   try {
@@ -74,11 +60,7 @@ async function login(req, res) {
       return sendError(res, 422, "VALIDATION_ERROR", "Email and password are required");
     }
 
-    const rows = await query(
-      `SELECT id, name, email, password_hash, role, is_active FROM admin_users WHERE email = ? LIMIT 1`,
-      [email]
-    );
-    const user = rows[0];
+    const user = await findByEmail(email);
 
     // Generic message either way to avoid leaking which emails exist.
     if (!user || !user.is_active || !(await verifyPassword(password, user.password_hash))) {
@@ -97,20 +79,46 @@ async function login(req, res) {
 
 /**
  * GET /apis/auth/me
- * Return the currently authenticated admin (requires a valid token).
+ * The signed-in account with its current role and access (requireAdmin has
+ * already re-read it from the database).
  */
 async function me(req, res) {
+  const a = req.admin;
+  return res.json({
+    data: { id: a.id, name: a.name, email: a.email, role: a.role, permissions: a.permissions },
+  });
+}
+
+/**
+ * PATCH /apis/auth/password   { currentPassword, newPassword }
+ * Any signed-in user can change their own password.
+ */
+async function changePassword(req, res) {
   try {
-    const rows = await query(
-      `SELECT id, name, email, role FROM admin_users WHERE id = ? AND is_active = 1 LIMIT 1`,
-      [req.admin.id]
-    );
-    if (!rows[0]) return sendError(res, 401, "UNAUTHENTICATED", "Account not found or inactive");
-    return res.json({ data: publicUser(rows[0]) });
+    const currentPassword = typeof req.body.currentPassword === "string" ? req.body.currentPassword : "";
+    const newPassword = typeof req.body.newPassword === "string" ? req.body.newPassword : "";
+
+    const fields = {};
+    if (!currentPassword) fields.currentPassword = "Enter your current password";
+    if (newPassword.length < 8) fields.newPassword = "New password must be at least 8 characters";
+    else if (newPassword === currentPassword) fields.newPassword = "New password must be different from the current one";
+    if (Object.keys(fields).length) {
+      return sendError(res, 422, "VALIDATION_ERROR", "One or more fields are invalid", fields);
+    }
+
+    const rows = await query(`SELECT password_hash FROM admin_users WHERE id = ? LIMIT 1`, [req.admin.id]);
+    if (!rows[0] || !(await verifyPassword(currentPassword, rows[0].password_hash))) {
+      return sendError(res, 422, "VALIDATION_ERROR", "Current password is incorrect", {
+        currentPassword: "Current password is incorrect",
+      });
+    }
+
+    await query(`UPDATE admin_users SET password_hash = ? WHERE id = ?`, [await hashPassword(newPassword), req.admin.id]);
+    return res.json({ data: { updated: true } });
   } catch (err) {
-    console.error("[auth] me error:", err);
-    return sendError(res, 500, "SERVER_ERROR", "Could not load profile");
+    console.error("[auth] change password error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not change password");
   }
 }
 
-module.exports = { signup, login, me };
+module.exports = { signup, login, me, changePassword, publicUser };

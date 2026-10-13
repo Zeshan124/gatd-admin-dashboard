@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import FormPrivacyNotice from "@/components/FormPrivacyNotice";
 
 // Reuses the brochure-leads pipeline; the lead is tagged source_type = "company_profile".
 const BROCHURE_API =
@@ -156,9 +157,13 @@ export default function CompanyProfileModal({ open, onClose, settings }) {
               <button type="submit" disabled={submitting} className="w-full py-3.5 bg-[#D52029] hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 mt-1">
                 {submitting ? "Submitting…" : "Get Company Profile"}
               </button>
-              <p className="text-xs text-slate-400 text-center leading-relaxed">
-                {description || "By submitting, you agree to receive information from GATD. We respect your privacy."}
-              </p>
+              {/* Admin text (Admin → Company Profile → Description / disclaimer), then the fixed privacy note. */}
+              {description && (
+                <p className="text-xs text-slate-500 text-center leading-relaxed">{description}</p>
+              )}
+              <FormPrivacyNotice>
+                By submitting, you agree that GATD may use your details to send you our company profile and contact you about our programmes and services.
+              </FormPrivacyNotice>
             </form>
           )}
         </div>

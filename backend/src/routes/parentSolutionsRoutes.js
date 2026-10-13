@@ -2,10 +2,12 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/parentSolutionsController");
 const child = require("../controllers/childSolutionsController");
-const { requireAdmin } = require("../middleware/auth");
+const { requirePermission } = require("../middleware/auth");
+// Dashboard section "solutions": GET needs view access; changes need manage access.
+const auth = requirePermission("solutions");
 
 // All admin content routes require a valid admin token.
-router.use(requireAdmin);
+router.use(auth);
 
 router.get("/", ctrl.list);
 router.post("/", ctrl.create);

@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/blogController");
-const { requireAdmin } = require("../middleware/auth");
+const { requirePermission } = require("../middleware/auth");
+// Dashboard section "blog": GET needs view access; changes need manage access.
+const auth = requirePermission("blog");
 
 // All admin blog routes require a valid admin token.
-router.use(requireAdmin);
+router.use(auth);
 
 router.get("/", ctrl.list);
 router.post("/", ctrl.create);

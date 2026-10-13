@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import FormPrivacyNotice from "@/components/FormPrivacyNotice";
 
 // Backend endpoint — override via NEXT_PUBLIC_BROCHURE_API.
 const BROCHURE_API =
@@ -186,9 +187,9 @@ export default function BrochureModal({
               >
                 {submitting ? "Submitting…" : "Download Brochure"}
               </button>
-              <p className="text-xs text-slate-400 text-center leading-relaxed">
-                By submitting, you agree to receive programme information from GATD. We respect your privacy.
-              </p>
+              <FormPrivacyNotice>
+                By submitting, you agree that GATD may use your details to send you this brochure and contact you about this programme.
+              </FormPrivacyNotice>
             </form>
           )}
         </div>

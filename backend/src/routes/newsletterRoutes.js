@@ -9,16 +9,18 @@ const {
   exportSubscribers,
 } = require("../controllers/newsletterController");
 const { newsletterRateLimit } = require("../middleware/rateLimit");
-const { requireAdmin } = require("../middleware/auth");
+const { requirePermission } = require("../middleware/auth");
+// Dashboard section "newsletter": GET needs view access; changes need manage access.
+const auth = requirePermission("newsletter");
 
 // Public: website footer newsletter form submits here.
 router.post("/", newsletterRateLimit, createSubscription);
 
 // Admin (token required): view / manage subscribers.
-router.get("/", requireAdmin, listSubscribers);
-router.get("/export", requireAdmin, exportSubscribers); // must precede "/:id"
-router.get("/:id", requireAdmin, getSubscriber);
-router.patch("/:id", requireAdmin, updateSubscriber);
-router.delete("/:id", requireAdmin, deleteSubscriber);
+router.get("/", auth, listSubscribers);
+router.get("/export", requirePermission("newsletter", "manage"), exportSubscribers); // personal data export needs manage; must precede "/:id"
+router.get("/:id", auth, getSubscriber);
+router.patch("/:id", auth, updateSubscriber);
+router.delete("/:id", auth, deleteSubscriber);
 
 module.exports = router;
