@@ -21,6 +21,7 @@
 --   * accreditation_settings table         (Program pages "Accredited By" heading + logos)
 --   * site_popup        table              (website popup shown on site open)
 --   * admin_users       permissions        (per-person dashboard access) + Super Admin promotion
+--   * admin_users       totp_*             (two-factor authentication, Google Authenticator)
 --
 -- NOTE: the MADANI subprogram content is NOT here — import madani_subprogram.sql
 -- separately (after editing its @parent_slug), it is a one-time content insert.
@@ -195,3 +196,12 @@ ALTER TABLE admin_users
 
 -- Promote the live Super Admin account (no-op if the email doesn't exist).
 UPDATE admin_users SET role = 'super_admin' WHERE email = 'superadmin@globalatd.com';
+
+-- Dashboard accounts — two-factor authentication (Google Authenticator) -------
+-- Required for everyone; accounts without it set it up on their next sign-in.
+ALTER TABLE admin_users
+  ADD COLUMN IF NOT EXISTS totp_secret       VARCHAR(255) NULL,
+  ADD COLUMN IF NOT EXISTS totp_enabled      TINYINT(1)   NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS totp_last_step    BIGINT       NULL,
+  ADD COLUMN IF NOT EXISTS totp_backup_codes JSON         NULL,
+  ADD COLUMN IF NOT EXISTS totp_enabled_at   TIMESTAMP    NULL;

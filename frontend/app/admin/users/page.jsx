@@ -138,6 +138,7 @@ export default function UsersPage() {
                   <th className="px-5 py-3 font-semibold">Role</th>
                   <th className="px-5 py-3 font-semibold">Access</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
+                  <th className="px-5 py-3 font-semibold">2FA</th>
                   <th className="px-5 py-3 font-semibold">Last sign-in</th>
                   <th className="px-5 py-3 font-semibold text-right">Actions</th>
                 </tr>
@@ -163,6 +164,17 @@ export default function UsersPage() {
                           <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 ring-1 ring-inset ring-green-200">Active</span>
                         ) : (
                           <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200">Deactivated</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3">
+                        {u.twoFactorEnabled ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 ring-1 ring-inset ring-green-200">
+                            <ShieldCheck className="w-3.5 h-3.5" /> On
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200" title="They'll be asked to set it up at their next sign-in">
+                            Set up at next sign-in
+                          </span>
                         )}
                       </td>
                       <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
@@ -207,6 +219,7 @@ export default function UsersPage() {
             setEditing(null);
             load();
           }}
+          onChanged={load}
         />
       )}
 
@@ -227,8 +240,32 @@ export default function UsersPage() {
 
 // ── Add / edit account ──────────────────────────────────────────────────────
 
-function AccountDrawer({ meta, editing, isMe, onClose, onSaved }) {
+function AccountDrawer({ meta, editing, isMe, onClose, onSaved, onChanged }) {
   const isEdit = !!editing;
+  const [twoFactorOn, setTwoFactorOn] = useState(!!editing?.twoFactorEnabled);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
+
+  const resetTwoFactor = async () => {
+    setResetting(true);
+    setError("");
+    try {
+      await usersApi.resetTwoFactor(editing.id);
+      setTwoFactorOn(false);
+      setConfirmReset(false);
+      setResetMsg(
+        isMe
+          ? "Your two-factor authentication was reset. You'll set it up again the next time you sign in."
+          : `Done. ${editing.name} will scan a new QR code the next time they sign in.`
+      );
+      onChanged?.();
+    } catch (e) {
+      setError(e.message || "Could not reset two-factor authentication.");
+    } finally {
+      setResetting(false);
+    }
+  };
   const [name, setName] = useState(editing?.name || "");
   const [email, setEmail] = useState(editing?.email || "");
   const [password, setPassword] = useState("");
@@ -350,6 +387,50 @@ function AccountDrawer({ meta, editing, isMe, onClose, onSaved }) {
           </div>
         )}
       </Section>
+
+      {isEdit && (
+        <Section title="Two-factor authentication" description="Required for every account. Codes come from Google Authenticator (or a similar app) on their phone.">
+          {resetMsg && (
+            <div className="flex items-start gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2.5 text-sm text-green-800">
+              <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{resetMsg}</span>
+            </div>
+          )}
+          {twoFactorOn ? (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-800 inline-flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-green-600" /> Set up and active
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Lost or replaced their phone, and has no backup codes left? Reset it and they&apos;ll scan a new QR code at their next sign-in.
+                </p>
+              </div>
+              {confirmReset ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <button type="button" onClick={() => setConfirmReset(false)} disabled={resetting} className="px-3 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-100">
+                    Cancel
+                  </button>
+                  <button type="button" onClick={resetTwoFactor} disabled={resetting} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-xs font-bold text-white disabled:opacity-60">
+                    {resetting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    Yes, reset 2FA
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setConfirmReset(true)} className="shrink-0 px-3 py-2 rounded-lg border border-red-200 text-xs font-bold text-red-600 hover:bg-red-50">
+                  Reset 2FA
+                </button>
+              )}
+            </div>
+          ) : (
+            !resetMsg && (
+              <p className="text-sm text-slate-500">
+                Not set up yet. They&apos;ll be asked to scan a QR code with Google Authenticator the next time they sign in.
+              </p>
+            )
+          )}
+        </Section>
+      )}
 
       <Section title="Role" description="A role fills in a starting set of access. You can then change any section below.">
         {isMe ? (

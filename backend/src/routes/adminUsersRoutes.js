@@ -10,6 +10,7 @@ router.get("/meta", ctrl.meta); // must precede "/:id"
 router.get("/", ctrl.list);
 router.post("/", ctrl.create);
 router.patch("/:id", ctrl.update);
+router.post("/:id/reset-2fa", ctrl.resetTwoFactor); // lost phone → set up again next sign-in
 router.delete("/:id", ctrl.remove);
 
 module.exports = router;

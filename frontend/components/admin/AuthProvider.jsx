@@ -46,16 +46,24 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Step 1: email + password. Usually returns a 2FA step instead of a session:
+  //   { twoFactor: "verify" | "setup", challengeToken } → the login page shows
+  //   the code / QR step, then calls completeLogin() with the final token.
+  // (If the server has no 2FA yet it returns { token, user } and we sign in.)
   const login = useCallback(
     async (email, password) => {
       const res = await authApi.login(email, password);
       const data = res?.data || res;
+      if (data?.twoFactor && data?.challengeToken) return data;
       if (!data?.token) throw new Error("No token returned from server.");
       persist(data.token, data.user);
       return data;
     },
     [persist]
   );
+
+  // Step 2 done (code accepted): save the real session.
+  const completeLogin = useCallback((tk, usr) => persist(tk, usr), [persist]);
 
   const logout = useCallback(() => persist(null, null), [persist]);
 
@@ -87,7 +95,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ token, user, hydrated, login, logout, refreshUser, can, isSuperAdmin }}
+      value={{ token, user, hydrated, login, completeLogin, logout, refreshUser, can, isSuperAdmin }}
     >
       {children}
     </AuthContext.Provider>

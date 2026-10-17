@@ -49,6 +49,10 @@ async function requireAdmin(req, res, next) {
     const expired = err && err.name === "TokenExpiredError";
     return sendError(res, 401, expired ? "TOKEN_EXPIRED" : "INVALID_TOKEN", expired ? "Session expired, please log in again" : "Invalid authentication token");
   }
+  // A 2FA challenge token (issued after the password, before the code) is not a login.
+  if (payload.purpose) {
+    return sendError(res, 401, "INVALID_TOKEN", "Invalid authentication token");
+  }
 
   try {
     const user = await loadAccount(payload.sub);

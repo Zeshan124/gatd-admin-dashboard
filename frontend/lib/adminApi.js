@@ -452,6 +452,16 @@ export const authApi = {
   /** → { data: { user, token } } */
   login: (email, password) =>
     request("/auth/login", { method: "POST", body: { email, password } }),
+  // Two-factor sign-in (step 2). Login returns { twoFactor: "setup"|"verify", challengeToken }.
+  /** First time: → { data: { otpauthUrl, secret, issuer, account } } for the QR code */
+  twoFactorSetup: (challengeToken) =>
+    request("/auth/2fa/setup", { method: "POST", body: { challengeToken } }),
+  /** Confirm the first code → { data: { token, user, backupCodes } } */
+  twoFactorEnable: (challengeToken, code) =>
+    request("/auth/2fa/enable", { method: "POST", body: { challengeToken, code } }),
+  /** Every later login (6-digit code or backup code) → { data: { token, user, ... } } */
+  twoFactorVerify: (challengeToken, code) =>
+    request("/auth/2fa/verify", { method: "POST", body: { challengeToken, code } }),
   /** Current account with its role + access → { data: { id, name, email, role, permissions } } */
   me: () => request("/auth/me"),
   /** Change the signed-in user's own password. */
@@ -470,4 +480,6 @@ export const usersApi = {
   /** body: any of { name, email, password, role, permissions, isActive } */
   update: (id, body) => request(`/admin/users/${id}`, { method: "PATCH", body }),
   remove: (id) => request(`/admin/users/${id}`, { method: "DELETE" }),
+  /** Lost phone: clear their 2FA so they set it up again on next sign-in. */
+  resetTwoFactor: (id) => request(`/admin/users/${id}/reset-2fa`, { method: "POST" }),
 };

@@ -1,6 +1,6 @@
 const { query } = require("../config/db");
 const { hashPassword, verifyPassword } = require("../utils/password");
-const { signToken } = require("../utils/jwt");
+const { signToken, signChallenge } = require("../utils/jwt");
 const { sendError } = require("../utils/http");
 const { effectivePermissions } = require("../utils/permissions");
 
@@ -29,27 +29,36 @@ async function signup(req, res) {
   );
 }
 
-/** Find an account by email; tolerates the `permissions` column not existing yet. */
+/**
+ * Find an account by email. Tolerates migrations not having run yet (backend
+ * deployed first): without the 2FA columns, `twoFactorReady` is false; without
+ * the permissions column too, the account is treated as legacy full access.
+ */
 async function findByEmail(email) {
-  try {
-    const rows = await query(
-      `SELECT id, name, email, password_hash, role, permissions, is_active FROM admin_users WHERE email = ? LIMIT 1`,
-      [email]
-    );
-    return rows[0] || null;
-  } catch (err) {
-    if (err && err.code !== "ER_BAD_FIELD_ERROR") throw err;
-    const rows = await query(
-      `SELECT id, name, email, password_hash, role, is_active FROM admin_users WHERE email = ? LIMIT 1`,
-      [email]
-    );
-    return rows[0] ? { ...rows[0], permissions: null } : null;
+  const base = "id, name, email, password_hash, role, is_active";
+  const attempts = [
+    [`${base}, permissions, totp_enabled`, (r) => ({ ...r, twoFactorReady: true })],
+    [`${base}, permissions`, (r) => ({ ...r, twoFactorReady: false })],
+    [base, (r) => ({ ...r, permissions: null, twoFactorReady: false })],
+  ];
+  for (const [cols, shape] of attempts) {
+    try {
+      const rows = await query(`SELECT ${cols} FROM admin_users WHERE email = ? LIMIT 1`, [email]);
+      return rows[0] ? shape(rows[0]) : null;
+    } catch (err) {
+      if (!err || err.code !== "ER_BAD_FIELD_ERROR") throw err;
+    }
   }
+  return null;
 }
 
 /**
- * POST /apis/auth/login
- * Email + password -> JWT access token + the account's role and access.
+ * POST /apis/auth/login   { email, password }
+ * Step 1 of 2. A correct password does NOT log in: it returns a short-lived
+ * challenge for the authenticator step —
+ *   { twoFactor: "verify", challengeToken }  → enter the 6-digit code
+ *   { twoFactor: "setup",  challengeToken }  → first time: scan the QR code
+ * (2FA is required for every account.)
  */
 async function login(req, res) {
   try {
@@ -67,8 +76,19 @@ async function login(req, res) {
       return sendError(res, 401, "INVALID_CREDENTIALS", "Invalid email or password");
     }
 
-    await query(`UPDATE admin_users SET last_login_at = UTC_TIMESTAMP() WHERE id = ?`, [user.id]);
+    if (user.twoFactorReady) {
+      return res.json({
+        data: {
+          twoFactor: user.totp_enabled ? "verify" : "setup",
+          challengeToken: signChallenge(user),
+          email: user.email,
+        },
+      });
+    }
 
+    // 2FA migration not applied yet — fall back to password-only so nobody is locked out.
+    console.warn("[auth] 2FA columns missing — signing in with password only. Run migration_admin_two_factor.sql.");
+    await query(`UPDATE admin_users SET last_login_at = UTC_TIMESTAMP() WHERE id = ?`, [user.id]);
     const token = signToken(user);
     return res.json({ data: { user: publicUser(user), token } });
   } catch (err) {

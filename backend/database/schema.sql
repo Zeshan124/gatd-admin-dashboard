@@ -109,6 +109,11 @@ CREATE TABLE IF NOT EXISTS admin_users (
   password_hash VARCHAR(255) NOT NULL,           -- bcrypt hash
   role          VARCHAR(24)  NOT NULL DEFAULT 'admin',   -- super_admin | admin | editor | viewer
   permissions   JSON         NULL,                       -- {section: "view"|"manage"}; NULL = legacy full access
+  totp_secret       VARCHAR(255) NULL,                   -- authenticator key, encrypted (AES-256-GCM)
+  totp_enabled      TINYINT(1)   NOT NULL DEFAULT 0,     -- 2FA set up and confirmed
+  totp_last_step    BIGINT       NULL,                   -- last accepted 30s step (no code re-use)
+  totp_backup_codes JSON         NULL,                   -- hashed one-time backup codes
+  totp_enabled_at   TIMESTAMP    NULL,
   is_active     TINYINT(1)   NOT NULL DEFAULT 1,
   last_login_at TIMESTAMP    NULL,
   created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -28,4 +28,22 @@ function verifyToken(token) {
   return jwt.verify(token, SECRET);
 }
 
-module.exports = { signToken, verifyToken };
+// ── 2FA challenge tokens ─────────────────────────────────────────────────────
+// After a correct password, the user gets a short-lived challenge token that
+// only allows the 2FA step (set up or verify). It is NOT a dashboard login:
+// requireAdmin rejects any token that carries a `purpose`.
+const CHALLENGE_PURPOSE = "2fa";
+const CHALLENGE_EXPIRES_IN = "5m";
+
+function signChallenge(user) {
+  return jwt.sign({ sub: user.id, purpose: CHALLENGE_PURPOSE }, SECRET, { expiresIn: CHALLENGE_EXPIRES_IN });
+}
+
+/** Payload of a valid 2FA challenge token; throws if invalid, expired or not a challenge. */
+function verifyChallenge(token) {
+  const payload = jwt.verify(String(token || ""), SECRET);
+  if (payload.purpose !== CHALLENGE_PURPOSE) throw new Error("Not a 2FA challenge token");
+  return payload;
+}
+
+module.exports = { signToken, verifyToken, signChallenge, verifyChallenge };

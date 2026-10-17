@@ -28,17 +28,16 @@ function mapUser(u) {
     // false = created before access control: full access until saved here.
     accessConfigured: u.role === "super_admin" || u.permissions != null,
     permissions: effectivePermissions(u),
+    twoFactorEnabled: !!u.totp_enabled,
     lastLoginAt: u.last_login_at,
     createdAt: u.created_at,
   };
 }
 
+// SELECT * so this keeps working whichever migrations have run (mapUser only
+// exposes safe fields — never the password hash or authenticator key).
 async function getUser(id) {
-  const rows = await query(
-    `SELECT id, name, email, role, permissions, is_active, last_login_at, created_at
-       FROM admin_users WHERE id = ? LIMIT 1`,
-    [id]
-  );
+  const rows = await query(`SELECT * FROM admin_users WHERE id = ? LIMIT 1`, [id]);
   return rows[0] || null;
 }
 
@@ -99,8 +98,7 @@ function meta(req, res) {
 async function list(req, res) {
   try {
     const rows = await query(
-      `SELECT id, name, email, role, permissions, is_active, last_login_at, created_at
-         FROM admin_users
+      `SELECT * FROM admin_users
         ORDER BY FIELD(role, 'super_admin', 'admin', 'editor', 'viewer'), name ASC`
     );
     return res.json({ data: rows.map(mapUser) });
@@ -215,4 +213,27 @@ async function remove(req, res) {
   }
 }
 
-module.exports = { meta, list, create, update, remove };
+// POST /apis/admin/users/:id/reset-2fa
+// For a lost/replaced phone: clears their authenticator key and backup codes.
+// They'll be asked to scan a new QR code the next time they sign in.
+async function resetTwoFactor(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const existing = Number.isNaN(id) ? null : await getUser(id);
+    if (!existing) return sendError(res, 404, "NOT_FOUND", "Account not found");
+
+    await query(
+      `UPDATE admin_users
+          SET totp_enabled = 0, totp_secret = NULL, totp_last_step = NULL,
+              totp_backup_codes = NULL, totp_enabled_at = NULL
+        WHERE id = ?`,
+      [existing.id]
+    );
+    return res.json({ data: mapUser(await getUser(existing.id)) });
+  } catch (err) {
+    console.error("[users] reset 2FA error:", err);
+    return sendError(res, 500, "SERVER_ERROR", "Could not reset two-factor authentication");
+  }
+}
+
+module.exports = { meta, list, create, update, remove, resetTwoFactor };
